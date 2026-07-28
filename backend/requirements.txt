@@ -1,0 +1,54 @@
+# Web Framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+pydantic==2.9.0
+pydantic-settings==2.5.0
+
+# Google APIs
+googlemaps==4.10.0
+google-generativeai>=0.8.3
+
+# Optimization
+ortools==9.12.4544  # >=9.14 needs protobuf 6.x, incompatible with google-generativeai
+
+# LangChain & LangGraph - using latest compatible versions
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-google-community>=2.0.0
+langgraph>=0.2.0
+
+# Utilities
+python-dotenv==1.0.0
+httpx==0.27.0
+pytest==8.3.0
+pytest-asyncio==0.24.0
+
+# Additional dependencies
+anyio>=3.0.0
+# protobuf version managed by OR-Tools and google-generativeai
+
+# Database - PostgreSQL (Phase 2.2)
+asyncpg>=0.29.0
+sqlalchemy[asyncio]>=2.0.23
+alembic>=1.13.1
+
+# Vector Database - Pinecone (Phase 2.2)
+pinecone>=5.0.0
+
+# Authentication (Phase 2.2)
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0,<5.0  # passlib 1.7.4 is incompatible with bcrypt 5.x
+python-multipart>=0.0.6
+
+# Redis (Phase 2.4 - pre-install)
+redis>=5.0.1
+
+# Amadeus SDK for accommodation & flights (Phase 2.3)
+amadeus==12.0.0
+langchain-google-genai>=2.0.10,<2.1  # 3.0.0 conflicts with google-generativeai (google-ai-generativelanguage pin)
+
+# SerpAPI for price intelligence (Phase 2.3 - Week 5)
+google-search-results==2.4.2
+geopy>=2.4.0  # For distance calculations
+
