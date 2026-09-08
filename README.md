@@ -80,10 +80,38 @@ For complete technical specifications, state graph definitions, and database sch
 ## 🛠️ Quick Start Guide
 
 ### **Prerequisites**
+
+**With Docker (recommended):** Docker Engine 24+ with Compose v2. Nothing else —
+Postgres and Redis come up with the stack.
+
+**Without Docker:**
 - **Python:** 3.11 or higher
 - **Node.js:** 18.0.0 or higher
 - **PostgreSQL:** 14+ (or local SQLite fallback)
 - **Redis:** 6+ (Optional, graceful degradation supported)
+
+---
+
+### **0. Docker Quickstart**
+
+```bash
+cp backend/env.example backend/.env   # then fill in your API keys
+docker compose up --build
+```
+
+| Service  | URL                            |
+| :------- | :----------------------------- |
+| Frontend | http://localhost:3000          |
+| API docs | http://localhost:8000/docs     |
+| Postgres | `localhost:5432` (`travel_agent`) |
+| Redis    | `localhost:6379`               |
+
+The backend mounts `./backend` and runs with `--reload`, so edits apply without
+a rebuild. The frontend is served by nginx from a production build; since Vite
+inlines `VITE_API_URL` at build time, changing the API URL means rebuilding that
+image (`docker compose build frontend`).
+
+The remaining sections cover running the services directly on your machine.
 
 ---
 

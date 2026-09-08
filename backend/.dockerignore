@@ -1,0 +1,23 @@
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Never bake real credentials into an image layer.
+.env
+.env.*
+!env.example
+
+*.log
+backend.log
+tests/
+alembic/versions/__pycache__/
+.git/
+.gitignore
+Dockerfile
+.dockerignore

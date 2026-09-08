@@ -1,0 +1,83 @@
+# Local development stack: Postgres, Redis, the FastAPI backend and the built
+# frontend. Replaces the manual "install Postgres 14+, install Redis 6+, run
+# start_app.bat" prerequisites with a single `docker compose up`.
+#
+#   cp backend/env.example backend/.env   # then fill in your API keys
+#   docker compose up --build
+#
+# Frontend: http://localhost:3000   API docs: http://localhost:8000/docs
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: travel_agent
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d travel_agent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      # Point at the compose services rather than whatever .env says about
+      # localhost, which inside a container means the container itself.
+      # These names match app/config.py fields — the settings object builds the
+      # connection URL from the parts, there is no DATABASE_URL to set.
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: travel_agent
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      HOST: 0.0.0.0
+      PORT: "8000"
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      # Source mount + --reload gives edit-and-refresh during development. Drop
+      # both to run the image exactly as it would run in production.
+      - ./backend:/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the bundle at build time; rebuild the image to change it.
+        VITE_API_URL: http://localhost:8000/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
