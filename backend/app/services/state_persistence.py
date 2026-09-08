@@ -152,20 +152,31 @@ class StatePersistenceService:
         # Delete existing itinerary
         await db.delete_trip_itinerary(trip_id)
         
-        # Create new itinerary items
-        for idx, item in enumerate(itinerary):
+        # Create new itinerary items.
+        #
+        # sequence_order is per-day, so it restarts at 0 on each new day rather
+        # than running across the whole trip. Items without a 'day' fall back to
+        # day 1, which is how single-day plans from the OR-Tools optimizer
+        # behave today.
+        sequence_by_day: dict[int, int] = {}
+
+        for item in itinerary:
             # Get POI by place_id if available
             poi_id = None
             if item.get('place_id'):
                 poi = await db.get_poi_by_place_id(item['place_id'])
                 if poi:
                     poi_id = poi.id
-            
+
+            day_number = item.get('day') or 1
+            sequence_order = sequence_by_day.get(day_number, 0)
+            sequence_by_day[day_number] = sequence_order + 1
+
             await db.create_itinerary_item(
                 trip_id=trip_id,
                 poi_id=poi_id,
-                day_number=1,  # TODO: Multi-day support
-                sequence_order=idx,
+                day_number=day_number,
+                sequence_order=sequence_order,
                 start_time=item['start_time'],
                 end_time=item['end_time'],
                 visit_duration_minutes=item.get('visit_duration_minutes'),

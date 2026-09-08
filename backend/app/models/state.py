@@ -51,6 +51,7 @@ class ItineraryItem(TypedDict, total=False):
     place_name: str
     place_id: str
     address: str
+    day: Optional[int]  # 1-based trip day; absent means a single-day plan
     start_time: str  # ISO format datetime or HH:MM
     end_time: str  # ISO format datetime or HH:MM
     notes: Optional[str]
