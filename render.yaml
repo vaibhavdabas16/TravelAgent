@@ -1,0 +1,104 @@
+# Render blueprint for the backend, Postgres and Redis.
+#
+# Vercel hosts the frontend; it cannot host this service — OR-Tools plus
+# LangGraph and the provider SDKs exceed the serverless bundle limit, and the
+# SSE itinerary stream needs a long-lived connection rather than a function
+# invocation. Any container host works; this file just makes Render one click.
+#
+# Deploy:
+#   1. Push this branch to GitHub.
+#   2. Render dashboard -> New -> Blueprint -> pick the repo.
+#   3. Fill in the secrets marked `sync: false` (they are deliberately not in
+#      this file — it is committed).
+#   4. Set CORS_ORIGINS to your Vercel URL once the frontend is deployed.
+#
+# Railway works from the same backend/Dockerfile if you prefer it; it just has
+# no equivalent declarative file to commit.
+
+databases:
+  - name: travel-agent-db
+    databaseName: travel_agent
+    user: postgres
+    plan: free
+
+services:
+  - type: redis
+    name: travel-agent-cache
+    plan: free
+    # Reachable only from services in this Render account.
+    ipAllowList: []
+
+  - type: web
+    name: travel-agent-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    region: oregon
+    healthCheckPath: /api/v1/health
+    envVars:
+      # --- wired automatically from the managed services above ---
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: travel-agent-db
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: travel-agent-db
+          property: port
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: travel-agent-db
+          property: database
+      - key: DATABASE_USER
+        fromDatabase:
+          name: travel-agent-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: travel-agent-db
+          property: password
+      - key: REDIS_HOST
+        fromService:
+          name: travel-agent-cache
+          type: redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: travel-agent-cache
+          type: redis
+          property: port
+
+      # --- runtime config ---
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "8000"
+      # Comma-separated. Set this to your Vercel domain, e.g.
+      # https://travel-agent.vercel.app — a wrong value here shows up as CORS
+      # failures in the browser, not as a server error.
+      - key: CORS_ORIGINS
+        sync: false
+
+      # --- secrets: set in the Render dashboard, never committed ---
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: AMADEUS_API_KEY
+        sync: false
+      - key: AMADEUS_API_SECRET
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      # Generate a long random value. The app currently falls back to a
+      # published placeholder if this is unset, which would let anyone mint
+      # valid tokens.
+      - key: JWT_SECRET_KEY
+        generateValue: true
