@@ -50,11 +50,16 @@ export function PlanningFlow() {
   const currentStep = sessionId ? stepIndexById(stepId) : 0;
   const currentStepData = planningSteps[currentStep];
   const CurrentComponent = currentStepData.component as any;
+  const isQuestionnaire = currentStepData.id === 'questionnaire';
 
   const [planningData, setPlanningData] = useState<PlanningData>(() => {
     if (sessionId) {
       const restored = loadPlanningData(sessionId);
-      if (restored) return restored;
+      // Always trust the URL for the session id. A deep link into a session
+      // this tab has never seen has no stored data, and leaving sessionId null
+      // would stop anything from being persisted from then on.
+      if (restored) return { ...restored, sessionId };
+      return emptyPlanningData({ ...(location.state as any)?.initialData, sessionId });
     }
     return emptyPlanningData((location.state as any)?.initialData);
   });
@@ -70,11 +75,14 @@ export function PlanningFlow() {
   const inFlightStep = useRef<string | null>(null);
 
   // Persist on every change so a refresh mid-wizard resumes where we left off.
+  // Keyed off the URL's session id, which is authoritative — planningData's
+  // copy is only a mirror of it.
   useEffect(() => {
-    if (planningData.sessionId) {
-      savePlanningData(planningData.sessionId, planningData);
+    const activeId = sessionId ?? planningData.sessionId;
+    if (activeId) {
+      savePlanningData(activeId, planningData);
     }
-  }, [planningData]);
+  }, [planningData, sessionId]);
 
   /** Fetch the data a step needs, unless we already have it. */
   const loadStepData = useCallback(
@@ -332,7 +340,13 @@ export function PlanningFlow() {
         )}
       </AnimatePresence>
 
-      {/* Header with progress */}
+      {/* Header with progress.
+          Hidden on the questionnaire: PlanningInterface ships its own fixed
+          header and its own "Step n of 8" counter for its internal questions,
+          so showing both stacked two headers on top of each other and put two
+          unrelated step counters on screen at once. Its ✕ routes home, which
+          is what "Back to Home" would have done here. */}
+      {!isQuestionnaire && (
       <motion.div
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -376,9 +390,11 @@ export function PlanningFlow() {
           </motion.h1>
         </div>
       </motion.div>
+      )}
 
-      {/* Main content */}
-      <div className={`pt-32 ${currentStepData.id === 'questionnaire' ? 'pb-8' : 'pb-24'}`}>
+      {/* Main content. The questionnaire draws its own header, so it needs
+          less top padding than the steps that sit under ours. */}
+      <div className={isQuestionnaire ? 'pt-24 pb-8' : 'pt-32 pb-24'}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -426,7 +442,7 @@ export function PlanningFlow() {
       </div>
 
       {/* Footer navigation — hidden on the questionnaire, which has its own CTA */}
-      {currentStepData.id !== 'questionnaire' && !stepError && (
+      {!isQuestionnaire && !stepError && (
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
