@@ -2,12 +2,15 @@
 API endpoints for the interactive planning flow.
 This router handles the sequential steps of the travel planning process.
 """
+import asyncio
+import json
 import logging
 import uuid
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
 from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.api.deps import get_current_user, get_current_user_or_guest
@@ -725,3 +728,110 @@ async def generate_itinerary(session_id: str, user_id: str = Depends(get_current
     except Exception as e:
         logger.error(f"Error generating itinerary: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Session rehydration & streaming ---
+
+def _sse(event: Dict[str, Any]) -> str:
+    """Encode a dict as a single Server-Sent Event frame."""
+    return f"data: {json.dumps(event)}\n\n"
+
+
+@router.get("/{session_id}")
+async def get_planning_session(
+    session_id: str,
+    user_id: str = Depends(get_current_user_or_guest)
+):
+    """
+    Return the server's view of a planning session.
+
+    The browser calls this after a refresh or when following a deep link, so it
+    can distinguish "your session is still live" from "the server no longer has
+    it" and show an honest message instead of an empty wizard.
+    """
+    session = planning_sessions.get(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    discovered = session.get("discovered_data", {})
+    return {
+        "session_id": session_id,
+        "created_at": session.get("created_at"),
+        "constraints": session.get("constraints", {}),
+        "selections": session.get("selections", {}),
+        # Counts only — the full payloads are large and the client already
+        # caches them; this is just enough to know which steps are populated.
+        "available": {
+            key: (len(value) if isinstance(value, (list, dict)) else bool(value))
+            for key, value in discovered.items()
+        },
+    }
+
+
+@router.post("/{session_id}/itinerary/stream")
+async def stream_itinerary(
+    session_id: str,
+    user_id: str = Depends(get_current_user_or_guest)
+):
+    """
+    Generate the itinerary while streaming stage updates as SSE.
+
+    Same work as POST /itinerary/generate, but the client learns which stage is
+    running. Generation can take a minute or more; without this the UI has
+    nothing to show but a spinner.
+    """
+    if session_id not in planning_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session = planning_sessions[session_id]
+    queue: asyncio.Queue = asyncio.Queue()
+
+    async def on_progress(stage: str, status: str) -> None:
+        await queue.put({"type": "stage", "stage": stage, "status": status})
+
+    async def run() -> None:
+        try:
+            from app.agents.itinerary import ItineraryAgent
+            agent = ItineraryAgent()
+            itinerary = await agent.generate_itinerary(session, on_progress=on_progress)
+            await queue.put({"type": "complete", "itinerary": itinerary})
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.error(f"Error streaming itinerary for {session_id}: {e}", exc_info=True)
+            await queue.put({"type": "error", "detail": str(e)})
+        finally:
+            await queue.put(None)
+
+    async def event_stream():
+        from app.agents.itinerary import ITINERARY_STAGES
+
+        task = asyncio.create_task(run())
+        # Send the stage list first so the client can draw the whole checklist
+        # before any of it has completed.
+        yield _sse({
+            "type": "stages",
+            "stages": [{"id": sid, "label": label} for sid, label in ITINERARY_STAGES],
+        })
+        try:
+            while True:
+                event = await queue.get()
+                if event is None:
+                    break
+                yield _sse(event)
+        finally:
+            # The browser navigated away mid-run: stop the work rather than
+            # letting it keep spending provider quota with nobody listening.
+            if not task.done():
+                task.cancel()
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            # Prevents nginx from buffering the stream into one late response.
+            "X-Accel-Buffering": "no",
+        },
+    )

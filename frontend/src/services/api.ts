@@ -54,6 +54,18 @@ export interface POIResponse {
   location?: { lat: number; lng: number };
 }
 
+/** One frame from the itinerary SSE stream. */
+export interface ItineraryStreamEvent {
+  type: 'stages' | 'stage' | 'complete' | 'error';
+  /** Sent once, first: the full stage list so the UI can draw the checklist. */
+  stages?: { id: string; label: string }[];
+  /** Sent on each transition: which stage, and whether it started or finished. */
+  stage?: string;
+  status?: 'active' | 'done';
+  itinerary?: any;
+  detail?: string;
+}
+
 export interface TripPOIsResponse {
   trip_id: string;
   destination: string;
@@ -289,6 +301,86 @@ class ApiService {
   async generateItinerary(sessionId: string): Promise<any> {
     const response = await this.api.post(`/v2/planning/${sessionId}/itinerary/generate`);
     return response.data;
+  }
+
+  async getPlanningSession(sessionId: string): Promise<any> {
+    const response = await this.api.get(`/v2/planning/${sessionId}`);
+    return response.data;
+  }
+
+  /**
+   * Generate the itinerary over SSE, reporting each stage as it starts and
+   * finishes. Resolves with the finished itinerary.
+   *
+   * Uses fetch rather than EventSource: EventSource cannot send an
+   * Authorization header, and we are not putting a bearer token in a URL.
+   * Falls back to the plain non-streaming endpoint if the stream is
+   * unavailable, so an older backend still works.
+   */
+  async streamItinerary(
+    sessionId: string,
+    onEvent: (event: ItineraryStreamEvent) => void,
+    signal?: AbortSignal
+  ): Promise<any> {
+    const token = this.getToken();
+    let response: Response;
+
+    try {
+      response = await fetch(`${this.api.defaults.baseURL}/v2/planning/${sessionId}/itinerary/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        signal,
+      });
+    } catch {
+      return this.generateItinerary(sessionId);
+    }
+
+    if (!response.ok || !response.body) {
+      if (response.status === 404) {
+        const error: any = new Error('Session not found');
+        error.response = { status: 404 };
+        throw error;
+      }
+      return this.generateItinerary(sessionId);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let itinerary: any = null;
+    let streamError: string | null = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSE frames are separated by a blank line; a partial frame stays in the
+      // buffer until the rest of it arrives.
+      const frames = buffer.split('\n\n');
+      buffer = frames.pop() ?? '';
+
+      for (const frame of frames) {
+        const line = frame.split('\n').find((l) => l.startsWith('data:'));
+        if (!line) continue;
+        let event: ItineraryStreamEvent;
+        try {
+          event = JSON.parse(line.slice(5).trim());
+        } catch {
+          continue;
+        }
+        onEvent(event);
+        if (event.type === 'complete') itinerary = event.itinerary;
+        if (event.type === 'error') streamError = event.detail ?? 'Itinerary generation failed';
+      }
+    }
+
+    if (streamError) throw new Error(streamError);
+    if (!itinerary) throw new Error('Itinerary generation ended without a result');
+    return itinerary;
   }
 }
 

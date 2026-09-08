@@ -5,7 +5,7 @@ import { api } from '../services/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Check, ChevronRight, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
-import { PlanningProgress } from './planning-progress';
+import { PlanningProgress, ProgressStage } from './planning-progress';
 import { StepRail } from './step-rail';
 import { planningSteps, stepIdByIndex, stepIndexById } from '../lib/planning-steps';
 import {
@@ -63,6 +63,7 @@ export function PlanningFlow() {
   const [isLoadingStep, setIsLoadingStep] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [generationStages, setGenerationStages] = useState<ProgressStage[] | null>(null);
 
   // Guards against a step's fetch firing twice under StrictMode double-effects
   // or a fast back/forward, which would double-bill the provider APIs.
@@ -197,12 +198,28 @@ export function PlanningFlow() {
       if (currentStep < planningSteps.length - 1) {
         navigate(`/plan/${sessionId}/${stepIdByIndex(currentStep + 1)}`);
       } else {
-        const itinerary = await api.generateItinerary(sessionId);
+        // Final step: stream the run so the wait shows real stages rather
+        // than an opaque spinner.
+        setGenerationStages([]);
+        const itinerary = await api.streamItinerary(sessionId, (event) => {
+          if (event.type === 'stages' && event.stages) {
+            setGenerationStages(
+              event.stages.map((s) => ({ id: s.id, label: s.label, status: 'pending' as const }))
+            );
+          } else if (event.type === 'stage' && event.stage) {
+            setGenerationStages((prev) =>
+              (prev ?? []).map((s) =>
+                s.id === event.stage ? { ...s, status: event.status === 'done' ? 'done' : 'active' } : s
+              )
+            );
+          }
+        });
         const trip = { ...planningData, ...itinerary };
         saveTrip(sessionId, trip);
         navigate(`/trip/${sessionId}`, { state: { tripData: trip } });
       }
     } catch (error: any) {
+      setGenerationStages(null);
       const detail =
         error?.response?.status === 404
           ? 'This planning session expired on the server. Start a new trip to continue.'
@@ -304,6 +321,13 @@ export function PlanningFlow() {
           <PlanningProgress
             destination={planningData.destination}
             headline="Curating your experience"
+          />
+        )}
+        {generationStages && (
+          <PlanningProgress
+            destination={planningData.destination}
+            headline="Building your itinerary"
+            stages={generationStages}
           />
         )}
       </AnimatePresence>

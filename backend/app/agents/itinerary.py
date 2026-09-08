@@ -1,7 +1,7 @@
 import logging
 import json
 import math
-from typing import Dict, Any, List
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 from datetime import datetime, timedelta
 from app.services.gemini import GeminiService
 from app.services.search_api import SearchApiService
@@ -9,20 +9,45 @@ from app.models.state import TripConstraints
 
 logger = logging.getLogger(__name__)
 
+# Reported to the client so it can render a real checklist instead of a
+# spinner. Order matters: the UI draws them in this sequence.
+ITINERARY_STAGES = [
+    ("collect", "Gathering your selections"),
+    ("cluster", "Grouping stops into days"),
+    ("transport", "Working out how you get around"),
+]
+
+# Signature of the progress callback: (stage_id, status) -> None.
+ProgressCallback = Callable[[str, str], Awaitable[None]]
+
+
 class ItineraryAgent:
     def __init__(self):
         self.llm = GeminiService()
         self.search_service = SearchApiService()
 
-    async def generate_itinerary(self, session_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def generate_itinerary(
+        self,
+        session_data: Dict[str, Any],
+        on_progress: Optional[ProgressCallback] = None,
+    ) -> Dict[str, Any]:
         """
         Generates a detailed itinerary based on user selections.
-        
+
         1. Clusters selections (POIs, Dining, Shopping) into days.
         2. Orders them logically (TSP-ish).
         3. Calculates transport between stops.
         4. Generates a narrative.
+
+        `on_progress` is invoked as each stage starts and finishes so callers
+        streaming to a browser can show where the run actually is. Generation
+        works identically when it is omitted.
         """
+        async def report(stage: str, status: str) -> None:
+            if on_progress is not None:
+                await on_progress(stage, status)
+
+        await report("collect", "active")
         constraints = session_data.get("constraints", {})
         selections = session_data.get("selections", {})
         
@@ -37,7 +62,11 @@ class ItineraryAgent:
         categories = ["pois", "dining", "shopping", "activities", "wellness", "entertainment", "nightlife", "accommodation"]
         
         for category in categories:
-            category_items = selections.get(category, [])
+            # `or []` rather than a .get default: the session seeds
+            # "accommodation" and "transport" as None, so the key exists and
+            # the default never applies. Skipping either step used to crash
+            # generation with "NoneType is not iterable".
+            category_items = selections.get(category) or []
             for i, item in enumerate(category_items):
                 # Generate a category-based ID (e.g., poi_0, dining_1)
                 # Use a short prefix for the category to keep it clean
@@ -63,12 +92,18 @@ class ItineraryAgent:
         if not items:
             return {"error": "No items selected"}
 
+        await report("collect", "done")
+
         # 2. Cluster items into days (Using LLM for semantic clustering + location)
+        await report("cluster", "active")
         day_plan = await self._cluster_and_order_items(items, constraints, simple_id_map)
-        
+        await report("cluster", "done")
+
         # 3. Enhance with Transport
+        await report("transport", "active")
         enhanced_plan = await self._add_transport_details(day_plan, destination)
-        
+        await report("transport", "done")
+
         return {
             "trip_id": session_data.get("session_id"),
             "destination": destination,
