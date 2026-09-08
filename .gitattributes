@@ -26,6 +26,13 @@
 *.cmd  text eol=crlf
 *.svg  text eol=lf
 
+# Container files are consumed by Linux images; CRLF here breaks shell
+# invocations inside a build and confuses nginx config parsing.
+Dockerfile      text eol=lf
+*.dockerfile    text eol=lf
+.dockerignore   text eol=lf
+*.conf          text eol=lf
+
 # Treat common binary assets as binary (no line-ending changes)
 *.png  binary
 *.jpg  binary
