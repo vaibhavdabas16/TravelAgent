@@ -1,303 +1,310 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { api } from '../services/api';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Check, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Check, ChevronRight, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
-import { PlanningInterface } from './planning-interface';
-import { PlacesToVisitSection } from './planning-sections/places-to-visit';
-import { AccommodationsSection } from './planning-sections/accommodations';
-import { DiningSection } from './planning-sections/dining';
-import { TransportationSection } from './planning-sections/transportation';
-import { ActivitiesSection } from './planning-sections/activities';
-import { ShoppingSection } from './planning-sections/shopping';
-import { WellnessSection } from './planning-sections/wellness';
+import { PlanningProgress } from './planning-progress';
+import { StepRail } from './step-rail';
+import { planningSteps, stepIdByIndex, stepIndexById } from '../lib/planning-steps';
+import {
+  PlanningData,
+  emptyPlanningData,
+  loadPlanningData,
+  savePlanningData,
+  saveTrip,
+} from '../lib/planning-storage';
 
-interface PlanningFlowProps {
-  initialData?: any;
-  onComplete: (data: any) => void;
-  onBack: () => void;
-}
+/**
+ * Which field on the planning data holds the results for a given step. Used to
+ * decide whether a step already has what it needs, so that revisiting a step
+ * (back button, refresh, deep link) does not re-hit the paid provider APIs.
+ */
+const STEP_DATA_KEY: Record<string, string> = {
+  places: 'pois',
+  accommodations: 'recommended_hotels',
+  dining: 'dining',
+  transportation: 'recommended_flights',
+  activities: 'activities',
+  shopping: 'shopping',
+  wellness: 'wellness',
+};
 
-const planningSteps = [
-  { id: 'questionnaire', name: 'Tell Us About Your Trip', component: PlanningInterface },
-  { id: 'places', name: 'Places to Visit', component: PlacesToVisitSection },
-  { id: 'accommodations', name: 'Accommodations', component: AccommodationsSection },
-  { id: 'dining', name: 'Dining', component: DiningSection },
-  { id: 'transportation', name: 'Transportation', component: TransportationSection },
-  { id: 'activities', name: 'Activities & Adventures', component: ActivitiesSection },
-  { id: 'shopping', name: 'Shopping & Markets', component: ShoppingSection },
-  { id: 'wellness', name: 'Wellness & Relaxation', component: WellnessSection },
-];
+/** Human-readable line shown while a step's data is being fetched. */
+const STEP_LOADING_COPY: Record<string, string> = {
+  places: 'Discovering places worth your time',
+  accommodations: 'Finding the best places to stay',
+  dining: 'Curating dining experiences',
+  transportation: 'Checking flights and local transit',
+  activities: 'Rounding up activities and adventures',
+  shopping: 'Looking for markets and shopping',
+  wellness: 'Finding spas and quiet corners',
+};
 
-export function PlanningFlow({ initialData, onComplete, onBack }: PlanningFlowProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [planningData, setPlanningData] = useState<any>({
-    query: initialData?.query || '',
-    destination: initialData?.destination || null,
-    tripStyle: 'balanced', // laid-back, balanced, adventurous
-    selectedItems: {},
-    sessionId: null, // Track session ID
-  });
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isLoadingNext, setIsLoadingNext] = useState(false);
-  const [resetCount, setResetCount] = useState(0);
+export function PlanningFlow() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { sessionId, stepId } = useParams<{ sessionId?: string; stepId?: string }>();
 
+  const currentStep = sessionId ? stepIndexById(stepId) : 0;
   const currentStepData = planningSteps[currentStep];
-  const CurrentComponent = currentStepData.component;
+  const CurrentComponent = currentStepData.component as any;
 
+  const [planningData, setPlanningData] = useState<PlanningData>(() => {
+    if (sessionId) {
+      const restored = loadPlanningData(sessionId);
+      if (restored) return restored;
+    }
+    return emptyPlanningData((location.state as any)?.initialData);
+  });
 
+  const [isStarting, setIsStarting] = useState(false);
+  const [isLoadingStep, setIsLoadingStep] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stepError, setStepError] = useState<string | null>(null);
+
+  // Guards against a step's fetch firing twice under StrictMode double-effects
+  // or a fast back/forward, which would double-bill the provider APIs.
+  const inFlightStep = useRef<string | null>(null);
+
+  // Persist on every change so a refresh mid-wizard resumes where we left off.
+  useEffect(() => {
+    if (planningData.sessionId) {
+      savePlanningData(planningData.sessionId, planningData);
+    }
+  }, [planningData]);
+
+  /** Fetch the data a step needs, unless we already have it. */
+  const loadStepData = useCallback(
+    async (targetStepId: string, sid: string, data: PlanningData) => {
+      const dataKey = STEP_DATA_KEY[targetStepId];
+      if (!dataKey) return; // questionnaire has nothing to fetch
+
+      const existing = data[dataKey];
+      if (Array.isArray(existing) ? existing.length > 0 : Boolean(existing)) return;
+
+      if (inFlightStep.current === targetStepId) return;
+      inFlightStep.current = targetStepId;
+
+      setIsLoadingStep(true);
+      setStepError(null);
+      try {
+        let patch: Partial<PlanningData> = {};
+        switch (targetStepId) {
+          case 'places': {
+            const res = await api.discoverPlaces(sid, data.tripStyle);
+            patch = { pois: res.pois || [] };
+            break;
+          }
+          case 'accommodations': {
+            const res = await api.searchAccommodations(sid);
+            patch = { recommended_hotels: res.hotels || [] };
+            break;
+          }
+          case 'dining': {
+            const res = await api.searchDining(sid);
+            patch = { dining: res.restaurants || [] };
+            break;
+          }
+          case 'transportation': {
+            const res = await api.searchTransport(sid);
+            patch = {
+              recommended_flights: res.transport_options?.flights || [],
+              local_transport: res.transport_options?.local || {},
+            };
+            break;
+          }
+          case 'activities': {
+            const res = await api.searchActivities(sid);
+            patch = { activities: res.activities || [] };
+            break;
+          }
+          case 'shopping': {
+            const res = await api.searchShopping(sid);
+            patch = { shopping: res.shopping || [] };
+            break;
+          }
+          case 'wellness': {
+            const res = await api.searchWellness(sid);
+            patch = { wellness: res.wellness_options || [] };
+            break;
+          }
+        }
+        setPlanningData((prev) => ({ ...prev, ...patch }));
+      } catch (error: any) {
+        const detail =
+          error?.response?.status === 404
+            ? 'This planning session expired on the server. Start a new trip to continue.'
+            : `We could not load ${currentStepData.name.toLowerCase()}.`;
+        setStepError(detail);
+      } finally {
+        setIsLoadingStep(false);
+        inFlightStep.current = null;
+      }
+    },
+    [currentStepData.name]
+  );
+
+  // Entering a step — by Next, Back, refresh, or a pasted URL — loads its data.
+  // Fetching here rather than inside handleNext is what makes deep links work.
+  useEffect(() => {
+    if (!sessionId || currentStepData.id === 'questionnaire') return;
+    loadStepData(currentStepData.id, sessionId, planningData);
+    // planningData is intentionally excluded: loadStepData reads the latest via
+    // closure on each entry, and including it would refetch on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, currentStepData.id]);
+
+  /** Post the selections for the step we are leaving. */
+  const submitSelections = async (leavingStepId: string, sid: string) => {
+    const selected = planningData.selectedItems?.[leavingStepId];
+    if (!selected || (Array.isArray(selected) && selected.length === 0)) return;
+
+    switch (leavingStepId) {
+      case 'places':
+        await api.selectPlaces(sid, selected);
+        break;
+      case 'accommodations':
+        await api.selectAccommodation(sid, selected);
+        break;
+      case 'dining':
+        await api.selectDining(sid, selected);
+        break;
+      case 'transportation':
+        await api.selectTransport(sid, selected);
+        break;
+      case 'activities':
+        await api.selectActivities(sid, selected);
+        break;
+      case 'shopping':
+        await api.selectShopping(sid, selected);
+        break;
+      case 'wellness':
+        await api.selectWellness(sid, selected);
+        break;
+    }
+  };
 
   const handleNext = async () => {
-    if (isTransitioning || isLoadingNext) return;
+    if (isSubmitting || isLoadingStep || !sessionId) return;
+    setIsSubmitting(true);
+    setStepError(null);
 
-    if (currentStep < planningSteps.length - 1) {
-      setIsTransitioning(true);
-      setIsLoadingNext(true);
+    try {
+      await submitSelections(currentStepData.id, sessionId);
 
-      try {
-        const currentStepId = planningSteps[currentStep].id;
-        const nextStepId = planningSteps[currentStep + 1].id;
-        const sessionId = planningData.sessionId;
-
-        // 1. Submit selections for current step
-        if (currentStepId === 'places') {
-          const selectedPlaces = planningData.selectedItems.places || [];
-          if (selectedPlaces.length > 0) {
-            await api.selectPlaces(sessionId, selectedPlaces);
-          }
-        } else if (currentStepId === 'accommodations') {
-          const selectedAccommodations = planningData.selectedItems.accommodations;
-          console.log('Submitting accommodations:', selectedAccommodations);
-          if (selectedAccommodations && selectedAccommodations.length > 0) {
-            await api.selectAccommodation(sessionId, selectedAccommodations);
-          }
-        } else if (currentStepId === 'transportation') {
-          const selectedTransport = planningData.selectedItems.transportation;
-          if (selectedTransport && selectedTransport.length > 0) {
-            await api.selectTransport(sessionId, selectedTransport);
-          }
-        } else if (currentStepId === 'dining') {
-          const selectedDining = planningData.selectedItems.dining;
-          if (selectedDining && selectedDining.length > 0) {
-            await api.selectDining(sessionId, selectedDining);
-          }
-        } else if (currentStepId === 'activities') {
-          const selectedActivities = planningData.selectedItems.activities;
-          if (selectedActivities && selectedActivities.length > 0) {
-            await api.selectActivities(sessionId, selectedActivities);
-          }
-        } else if (currentStepId === 'shopping') {
-          const selectedShopping = planningData.selectedItems.shopping;
-          if (selectedShopping && selectedShopping.length > 0) {
-            await api.selectShopping(sessionId, selectedShopping);
-          }
-        } else if (currentStepId === 'wellness') {
-          const selectedWellness = planningData.selectedItems.wellness;
-          if (selectedWellness && selectedWellness.length > 0) {
-            await api.selectWellness(sessionId, selectedWellness);
-          }
-        }
-
-        // 2. Fetch data for next step
-        let nextStepData = {};
-        if (nextStepId === 'accommodations') {
-          toast.info("Finding the best places to stay...");
-          const response = await api.searchAccommodations(sessionId);
-          nextStepData = { recommended_hotels: response.hotels };
-        } else if (nextStepId === 'dining') {
-          toast.info("Curating dining experiences...");
-          const response = await api.searchDining(sessionId);
-          nextStepData = { dining: response.restaurants }; // Mock
-        } else if (nextStepId === 'transportation') {
-          const response = await api.searchTransport(sessionId);
-          // Map to expected format for TransportationSection
-          nextStepData = {
-            recommended_flights: response.transport_options?.flights || [],
-            local_transport: response.transport_options?.local || {}
-          };
-        } else if (nextStepId === 'activities') {
-          const response = await api.searchActivities(sessionId);
-          nextStepData = { activities: response.activities };
-        } else if (nextStepId === 'shopping') {
-          const response = await api.searchShopping(sessionId);
-          nextStepData = { shopping: response.shopping };
-        } else if (nextStepId === 'wellness') {
-          const response = await api.searchWellness(sessionId);
-          nextStepData = { wellness: response.wellness_options };
-        }
-
-        // Update planning data with new fetched data
-        setPlanningData((prev: any) => ({
-          ...prev,
-          ...nextStepData
-        }));
-
-        // Move to next step
-        setTimeout(() => {
-          setCurrentStep(currentStep + 1);
-          setIsTransitioning(false);
-          setIsLoadingNext(false);
-        }, 300);
-
-      } catch (error) {
-        console.error("Error transitioning step:", error);
-        setIsTransitioning(false);
-        setIsLoadingNext(false);
-        toast.error("Failed to load next section. Please try again.");
+      if (currentStep < planningSteps.length - 1) {
+        navigate(`/plan/${sessionId}/${stepIdByIndex(currentStep + 1)}`);
+      } else {
+        const itinerary = await api.generateItinerary(sessionId);
+        const trip = { ...planningData, ...itinerary };
+        saveTrip(sessionId, trip);
+        navigate(`/trip/${sessionId}`, { state: { tripData: trip } });
       }
-    } else {
-      // Complete planning
-      if (isTransitioning) return;
-
-      try {
-        setIsTransitioning(true);
-        toast.info("Generating your final itinerary...");
-
-        // Ensure last step (wellness) is saved too!
-        const currentStepId = planningSteps[currentStep].id;
-        const sessionId = planningData.sessionId;
-        if (currentStepId === 'wellness') {
-          const selectedWellness = planningData.selectedItems.wellness;
-          if (selectedWellness && selectedWellness.length > 0) {
-            await api.selectWellness(sessionId, selectedWellness);
-          }
-        }
-
-        const itinerary = await api.generateItinerary(planningData.sessionId);
-        console.log('Planning completed with itinerary:', itinerary);
-        // Merge backend itinerary with existing planning data to preserve context
-        onComplete({ ...planningData, ...itinerary });
-      } catch (error) {
-        console.error("Error generating itinerary:", error);
-        setIsTransitioning(false);
-        toast.error("Failed to generate itinerary.");
-      }
+    } catch (error: any) {
+      const detail =
+        error?.response?.status === 404
+          ? 'This planning session expired on the server. Start a new trip to continue.'
+          : 'We could not save that step. Please try again.';
+      setStepError(detail);
+      toast.error(detail);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handlePrevious = () => {
-    if (isTransitioning) return;
-
-    if (currentStep > 0) {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setCurrentStep(currentStep - 1);
-        setIsTransitioning(false);
-      }, 300);
+    if (currentStep > 0 && sessionId) {
+      navigate(`/plan/${sessionId}/${stepIdByIndex(currentStep - 1)}`);
     } else {
-      onBack();
+      navigate('/');
     }
   };
 
-  const handleSectionComplete = useCallback(async (sectionData: any) => {
-    // Prevent duplicate updates if data hasn't changed
-    if (currentStepData.id !== 'questionnaire') {
-      const currentData = planningData.selectedItems[currentStepData.id];
-      if (JSON.stringify(currentData) === JSON.stringify(sectionData)) {
-        return;
-      }
+  /** Retry whatever failed on the current step. */
+  const handleRetry = () => {
+    if (!sessionId) return;
+    setStepError(null);
+    const dataKey = STEP_DATA_KEY[currentStepData.id];
+    if (dataKey) {
+      // Drop the empty result so loadStepData does not short-circuit.
+      setPlanningData((prev) => ({ ...prev, [dataKey]: undefined }));
+      loadStepData(currentStepData.id, sessionId, { ...planningData, [dataKey]: undefined });
     }
+  };
 
-    console.log('Section completed:', currentStepData.id, sectionData);
-
-    if (currentStepData.id === 'questionnaire') {
-      // Handle questionnaire completion
-      const updatedData = {
+  /** Questionnaire submit: open the session, then hand off to the URL. */
+  const handleQuestionnaireComplete = useCallback(
+    async (sectionData: any) => {
+      if (isStarting) return;
+      const merged: PlanningData = {
         ...planningData,
         ...sectionData,
-        tripStyle: sectionData.tripStyle || 'balanced'
+        tripStyle: sectionData.tripStyle || 'balanced',
       };
-      setPlanningData(updatedData);
-
-      // Start transition and loading
-      setIsTransitioning(true);
-      // toast.info("Starting your planning session..."); // Removed toast, using spinner instead
-
-      // Safety timeout for spinner - start BEFORE async calls
-      const safetyTimer = setTimeout(() => {
-        setResetCount(prev => prev + 1);
-        setIsTransitioning(false);
-      }, 15000);
+      setPlanningData(merged);
+      setIsStarting(true);
+      setStepError(null);
 
       try {
-        // 1. Start Planning Session
         const startResponse = await api.startPlanning({
-          query: updatedData.query,
-          destination: updatedData.destination,
-          travelers: updatedData.travelers,
-          budget: updatedData.budget,
-          interests: updatedData.interests,
-          pace: updatedData.pace,
-          amenities: updatedData.amenities,
-          dates: updatedData.dates,
-          tripStyle: updatedData.tripStyle,
-          origin: updatedData.origin // Pass origin to backend
+          query: merged.query,
+          destination: merged.destination,
+          travelers: merged.travelers,
+          budget: merged.budget,
+          interests: merged.interests,
+          pace: merged.pace,
+          amenities: merged.amenities,
+          dates: merged.dates,
+          tripStyle: merged.tripStyle,
+          origin: merged.origin,
         });
 
-        const sessionId = startResponse.session_id;
+        const newSessionId = startResponse.session_id;
+        const withSession: PlanningData = { ...merged, sessionId: newSessionId };
+        savePlanningData(newSessionId, withSession);
+        setPlanningData(withSession);
 
-        // 2. Discover Places (First Step)
-        // toast.info(`Discovering amazing places in ${updatedData.destination}...`);
-        const placesResponse = await api.discoverPlaces(sessionId, updatedData.tripStyle);
-
-        // Update state
-        setPlanningData((prev: any) => ({
-          ...prev,
-          sessionId: sessionId,
-          pois: placesResponse.pois || [],
-          // Clear legacy fields to avoid confusion
-          tripId: null,
-          recommended_hotels: [],
-          recommended_flights: []
-        }));
-
-        // Move to next step
-        setTimeout(() => {
-          setCurrentStep(1);
-          setIsTransitioning(false);
-        }, 500);
-
-        // Clear safety timeout on success
-        clearTimeout(safetyTimer);
-
+        // replace: true so the browser Back button from step 1 returns home
+        // rather than resubmitting the questionnaire.
+        navigate(`/plan/${newSessionId}/places`, { replace: true });
       } catch (error) {
-        console.error('Failed to start planning:', error);
-        setIsTransitioning(false);
-        toast.error("Failed to start planning session. Please try again.");
-        // Force reset of the current component to clear "loading/completed" state
-        setResetCount(prev => prev + 1);
+        setStepError('We could not start your planning session. Please try again.');
+        toast.error('Failed to start planning session.');
+      } finally {
+        setIsStarting(false);
       }
+    },
+    [planningData, isStarting, navigate]
+  );
 
-    } else {
-      // Handle specialized section completion
-      const updatedData = {
-        ...planningData,
-        selectedItems: {
-          ...planningData.selectedItems,
-          [currentStepData.id]: sectionData
-        }
-      };
-      console.log('Updated planning data after section:', updatedData);
-      setPlanningData(updatedData);
-    }
-  }, [currentStepData, planningData]);
+  /** Section submit: record the selection, nothing else. */
+  const handleSectionSelection = useCallback(
+    (sectionData: any) => {
+      setPlanningData((prev) => {
+        const current = prev.selectedItems?.[currentStepData.id];
+        if (JSON.stringify(current) === JSON.stringify(sectionData)) return prev;
+        return {
+          ...prev,
+          selectedItems: { ...prev.selectedItems, [currentStepData.id]: sectionData },
+        };
+      });
+    },
+    [currentStepData.id]
+  );
+
+  const isLastStep = currentStep === planningSteps.length - 1;
+  const busy = isStarting || isLoadingStep || isSubmitting;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative">
-      {/* Loading Overlay for Questionnaire Transition */}
       <AnimatePresence>
-        {isTransitioning && currentStep === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center"
-          >
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-            <h2 className="text-2xl font-bold text-white mb-2">Curating Your Experience</h2>
-            <p className="text-white/70">Finding the best spots in {planningData.destination || 'your destination'}...</p>
-          </motion.div>
+        {isStarting && (
+          <PlanningProgress
+            destination={planningData.destination}
+            headline="Curating your experience"
+          />
         )}
       </AnimatePresence>
 
@@ -305,47 +312,40 @@ export function PlanningFlow({ initialData, onComplete, onBack }: PlanningFlowPr
       <motion.div
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
         className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/10"
       >
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={handlePrevious}
-              className="text-white hover:bg-white/10"
-            >
+          <div className="flex items-center justify-between gap-4">
+            <Button variant="ghost" onClick={handlePrevious} className="text-white hover:bg-white/10 shrink-0">
               <ArrowLeft className="w-4 h-4 mr-2" />
               {currentStep === 0 ? 'Back to Home' : 'Previous'}
             </Button>
 
-            {/* Progress indicator */}
-            <div className="flex items-center space-x-2">
-              {planningSteps.map((step, index) => (
-                <motion.div
-                  key={step.id}
-                  className={`w-3 h-3 rounded-full ${index <= currentStep ? 'bg-blue-400' : 'bg-white/20'
-                    }`}
-                  animate={{
-                    scale: index === currentStep ? 1.2 : 1,
-                    opacity: index <= currentStep ? 1 : 0.5
-                  }}
-                  transition={{ duration: 0.3 }}
-                />
-              ))}
-            </div>
+            <StepRail
+              steps={planningSteps}
+              currentStep={currentStep}
+              onSelect={(index) => {
+                // Only completed steps are navigable; jumping forward would
+                // skip the selections the later searches depend on.
+                if (sessionId && index < currentStep) {
+                  navigate(`/plan/${sessionId}/${stepIdByIndex(index)}`);
+                }
+              }}
+            />
 
-            <div className="text-white">
-              <span className="text-sm opacity-70">Step {currentStep + 1} of {planningSteps.length}</span>
+            <div className="text-white shrink-0">
+              <span className="text-sm opacity-70">
+                Step {currentStep + 1} of {planningSteps.length}
+              </span>
             </div>
           </div>
 
-          {/* Step title */}
           <motion.h1
             key={currentStep}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: 0.4 }}
             className="text-2xl text-white mt-4"
           >
             {currentStepData.name}
@@ -357,55 +357,65 @@ export function PlanningFlow({ initialData, onComplete, onBack }: PlanningFlowPr
       <div className={`pt-32 ${currentStepData.id === 'questionnaire' ? 'pb-8' : 'pb-24'}`}>
         <AnimatePresence mode="wait">
           <motion.div
-            key={`${currentStep}-${resetCount}`}
-            initial={{ opacity: 0, x: 50 }}
+            key={currentStep}
+            initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.35, ease: 'easeInOut' }}
             className="container mx-auto px-6"
           >
-            {(() => {
-              const Component = CurrentComponent as any;
-              return currentStepData.id === 'questionnaire' ? (
-                <Component
-                  onComplete={handleSectionComplete}
-                  onClose={() => { }} // No close for questionnaire in flow
-                  initialData={planningData}
-                />
-              ) : (
-                <Component
-                  planningData={planningData}
-                  onSelectionChange={handleSectionComplete}
-                  isTransitioning={isTransitioning}
-                />
-              );
-            })()}
+            {stepError ? (
+              <div className="max-w-lg mx-auto text-center bg-white/5 border border-white/10 rounded-2xl p-10">
+                <h2 className="text-xl text-white mb-3">Something went wrong</h2>
+                <p className="text-white/70 mb-8">{stepError}</p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button onClick={handleRetry} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Try again
+                  </Button>
+                  <Button variant="ghost" onClick={() => navigate('/plan')} className="text-white hover:bg-white/10">
+                    Start over
+                  </Button>
+                </div>
+              </div>
+            ) : isLoadingStep ? (
+              <PlanningProgress
+                inline
+                destination={planningData.destination}
+                headline={STEP_LOADING_COPY[currentStepData.id] || 'Working on it'}
+              />
+            ) : currentStepData.id === 'questionnaire' ? (
+              <CurrentComponent
+                onComplete={handleQuestionnaireComplete}
+                onClose={() => navigate('/')}
+                initialData={planningData}
+              />
+            ) : (
+              <CurrentComponent
+                planningData={planningData}
+                onSelectionChange={handleSectionSelection}
+                isTransitioning={busy}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Footer with navigation - hide during questionnaire */}
-      {currentStepData.id !== 'questionnaire' && (
+      {/* Footer navigation — hidden on the questionnaire, which has its own CTA */}
+      {currentStepData.id !== 'questionnaire' && !stepError && (
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
           className="fixed bottom-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-xl border-t border-white/10"
         >
           <div className="container mx-auto px-6 py-4">
             <div className="flex justify-between items-center">
-              <div className="text-white/70 text-sm">
-                Choose the options that appeal to you most
-              </div>
-
-              <Button
-                onClick={handleNext}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isTransitioning}
-              >
-                {currentStep === planningSteps.length - 1 ? 'Complete Planning' : 'Next Section'}
-                {currentStep !== planningSteps.length - 1 && <ChevronRight className="w-4 h-4 ml-2" />}
-                {currentStep === planningSteps.length - 1 && <Check className="w-4 h-4 ml-2" />}
+              <div className="text-white/70 text-sm">Choose the options that appeal to you most</div>
+              <Button onClick={handleNext} className="bg-blue-600 hover:bg-blue-700 text-white" disabled={busy}>
+                {isSubmitting ? 'Saving…' : isLastStep ? 'Complete Planning' : 'Next Section'}
+                {!isSubmitting && !isLastStep && <ChevronRight className="w-4 h-4 ml-2" />}
+                {!isSubmitting && isLastStep && <Check className="w-4 h-4 ml-2" />}
               </Button>
             </div>
           </div>
