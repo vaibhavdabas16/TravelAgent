@@ -239,13 +239,13 @@ export function TransportationSection({ planningData, onSelectionChange, isTrans
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="inline-block p-4 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 backdrop-blur-sm mb-6"
+          className="inline-block p-4 rounded-full bg-brand mb-6"
         >
-          <Car className="w-8 h-8 text-blue-400" />
+          <Car className="w-8 h-8 text-brand" />
         </motion.div>
 
-        <h2 className="text-3xl text-white mb-4">Get Around in Style</h2>
-        <p className="text-white/70 text-lg max-w-2xl mx-auto">
+        <h2 className="text-3xl text-ink mb-4">Get Around in Style</h2>
+        <p className="text-ink-muted text-lg max-w-2xl mx-auto">
           Choose your preferred transportation methods for a seamless travel experience.
         </p>
       </motion.div>
@@ -263,9 +263,9 @@ export function TransportationSection({ planningData, onSelectionChange, isTrans
               transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
             >
               <Card className={`overflow-hidden cursor-pointer transition-all duration-300 ${isSelected
-                ? 'ring-2 ring-blue-400 bg-blue-500/10'
-                : 'bg-black/20 hover:bg-black/30'
-                } backdrop-blur-sm border-white/10`}>
+                ? 'ring-2 ring-brand bg-brand/10'
+                : 'bg-surface hover:bg-black/30'
+                } border-line`}>
                 <div className="relative">
                   <div className="aspect-video overflow-hidden">
                     <img
@@ -276,7 +276,7 @@ export function TransportationSection({ planningData, onSelectionChange, isTrans
                   </div>
 
                   <div className="absolute top-3 left-3">
-                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+                    <Badge className="bg-brand text-white border-0">
                       <Star className="w-3 h-3 mr-1" />
                       AI Suggested
                     </Badge>
@@ -290,8 +290,8 @@ export function TransportationSection({ planningData, onSelectionChange, isTrans
                         exit={{ opacity: 0, scale: 0.8 }}
                         className="absolute top-3 right-3"
                       >
-                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-                          <Heart className="w-4 h-4 text-white fill-current" />
+                        <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center">
+                          <Heart className="w-4 h-4 text-ink fill-current" />
                         </div>
                       </motion.div>
                     )}
@@ -299,22 +299,22 @@ export function TransportationSection({ planningData, onSelectionChange, isTrans
 
                   <div className="absolute bottom-3 right-3">
                     <div className="flex items-center bg-black/50 rounded-full px-2 py-1">
-                      <IconComponent className="w-4 h-4 text-white mr-1" />
-                      <span className="text-white text-sm capitalize">{transport.type}</span>
+                      <IconComponent className="w-4 h-4 text-ink mr-1" />
+                      <span className="text-ink text-sm capitalize">{transport.type}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-5">
-                  <h3 className="text-white text-lg mb-3">{transport.name}</h3>
-                  <p className="text-white/70 text-sm mb-4">{transport.description}</p>
+                  <h3 className="text-ink text-lg mb-3">{transport.name}</h3>
+                  <p className="text-ink-muted text-sm mb-4">{transport.description}</p>
 
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <MapPin className="w-4 h-4 mr-2" />
                       {transport.route}
                     </div>
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <Clock className="w-4 h-4 mr-2" />
                       {transport.duration}
                     </div>
@@ -322,21 +322,21 @@ export function TransportationSection({ planningData, onSelectionChange, isTrans
 
                   <div className="flex flex-wrap gap-1 mb-4">
                     {transport.features.map((feature) => (
-                      <Badge key={feature} variant="secondary" className="text-xs bg-white/10 text-white/70">
+                      <Badge key={feature} variant="secondary" className="text-xs bg-surface text-ink-muted">
                         {feature}
                       </Badge>
                     ))}
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-blue-400">{transport.price}</span>
+                    <span className="text-brand">{transport.price}</span>
                     <Button
                       size="sm"
                       variant={isSelected ? "default" : "outline"}
                       onClick={() => handleToggleTransport(transport.id)}
                       className={isSelected
-                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                        : "border-white/20 text-white hover:bg-white/10"
+                        ? "bg-brand hover:bg-brand text-white"
+                        : "border-line text-ink hover:bg-surface"
                       }
                     >
                       {isSelected ? (

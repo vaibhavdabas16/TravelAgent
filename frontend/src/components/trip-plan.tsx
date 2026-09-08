@@ -585,15 +585,15 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center text-white">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
+        <div className="text-center text-ink">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full mx-auto mb-4"
+            className="w-16 h-16 border-4 border-brand border-t-transparent rounded-full mx-auto mb-4"
           />
           <h2 className="text-2xl mb-2">Creating Your Perfect Trip</h2>
-          <p className="text-white/70">Generating your personalized itinerary...</p>
+          <p className="text-ink-muted">Generating your personalized itinerary...</p>
         </div>
       </div>
     );
@@ -602,11 +602,11 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center text-white">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
+        <div className="text-center text-ink">
           <h2 className="text-2xl mb-4">Something went wrong</h2>
           <p className="mb-6">{error}</p>
-          <Button onClick={onClose} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={onClose} className="bg-brand hover:bg-brand">
             Back to Home
           </Button>
         </div>
@@ -627,11 +627,11 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
           <span className="text-sm font-medium text-green-400">
             {'₹'.repeat(scale)}
           </span>
-          <span className="text-sm font-medium text-gray-600">
+          <span className="text-sm font-medium text-ink-muted">
             {'₹'.repeat(5 - scale)}
           </span>
         </div>
-        <span className="text-xs text-white/50 font-medium">
+        <span className="text-xs text-ink-subtle font-medium">
           {scale}/5
         </span>
       </div>
@@ -671,16 +671,16 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      sightseeing: 'bg-blue-500/20 text-blue-300',
+      sightseeing: 'bg-brand/20 text-blue-300',
       food: 'bg-green-500/20 text-green-300',
-      activity: 'bg-purple-500/20 text-purple-300',
+      activity: 'bg-brand/20 text-purple-300',
       transport: 'bg-orange-500/20 text-orange-300',
       shopping: 'bg-pink-500/20 text-pink-300',
-      culture: 'bg-indigo-500/20 text-indigo-300',
+      culture: 'bg-brand/20 text-indigo-300',
       entertainment: 'bg-red-500/20 text-red-300',
       wellness: 'bg-teal-500/20 text-teal-300'
     };
-    return colors[category as keyof typeof colors] || 'bg-gray-500/20 text-gray-300';
+    return colors[category as keyof typeof colors] || 'bg-gray-500/20 text-ink-subtle';
   };
 
   return (
@@ -688,12 +688,12 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden"
+        className="min-h-screen bg-canvas relative overflow-hidden"
       >
         {/* Animated background */}
         <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/6 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/6 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute top-1/4 left-1/6 w-96 h-96 bg-brand/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/6 w-96 h-96 bg-brand/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500/5 rounded-full blur-3xl animate-pulse" />
         </div>
 
@@ -704,7 +704,7 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
               initial={{ opacity: 0, y: -50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -50, scale: 0.9 }}
-              className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-4 rounded-2xl shadow-2xl backdrop-blur-sm"
+              className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 bg-brand text-white px-8 py-4 rounded-2xl"
             >
               <div className="flex items-center gap-3">
                 <CheckCircle className="w-6 h-6" />
@@ -733,8 +733,8 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                 </div>
               </div>
             )}
-            <Card className="bg-black/20 backdrop-blur-xl border-white/10 shadow-2xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10" />
+            <Card className="bg-surface border-line overflow-hidden">
+              <div className="absolute inset-0 bg-brand" />
               <CardContent className="relative p-8">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                   <div className="flex-1">
@@ -742,27 +742,27 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                       <motion.div
                         animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
                         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                        className="w-16 h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg"
+                        className="w-16 h-16 bg-brand rounded-2xl flex items-center justify-center"
                       >
-                        <Globe className="w-8 h-8 text-white" />
+                        <Globe className="w-8 h-8 text-ink" />
                       </motion.div>
                       <div className="flex-1">
-                        <h1 className="text-4xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+                        <h1 className="text-4xl text-ink mb-2">
                           {typeof tripData.destination === 'string' ? tripData.destination : tripData.destination?.name || 'Your Destination'}
                         </h1>
-                        <p className="text-white/70 text-lg">Your AI-curated travel itinerary</p>
+                        <p className="text-ink-muted text-lg">Your AI-curated travel itinerary</p>
                       </div>
                       <div className="flex gap-3">
                         <Button
                           variant="outline"
-                          className="border-white/20 !text-white hover:bg-white/10 hover:!text-white backdrop-blur-sm font-medium"
+                          className="border-line !text-ink hover:bg-surface hover:!text-ink font-medium"
                         >
                           <Share2 className="w-4 h-4 mr-2" />
                           Share
                         </Button>
                         <Button
                           variant="outline"
-                          className="border-white/20 !text-white hover:bg-white/10 hover:!text-white backdrop-blur-sm font-medium"
+                          className="border-line !text-ink hover:bg-surface hover:!text-ink font-medium"
                         >
                           <Download className="w-4 h-4 mr-2" />
                           Export
@@ -771,7 +771,7 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                           <Button
                             onClick={onClose}
                             variant="ghost"
-                            className="text-white/70 hover:text-white hover:bg-white/10"
+                            className="text-ink-muted hover:text-ink hover:bg-surface"
                           >
                             <ArrowLeft className="w-5 h-5 mr-2" />
                             Back
@@ -779,38 +779,38 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                         )}
                       </div>
                     </div>
-                    <p className="text-white/80 text-lg leading-relaxed mb-6">{tripData.overview}</p>
+                    <p className="text-ink-muted text-lg leading-relaxed mb-6">{tripData.overview}</p>
 
                     <div className="flex flex-wrap gap-4">
                       <motion.div
                         whileHover={{ scale: 1.05 }}
-                        className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-xl backdrop-blur-sm"
+                        className="flex items-center gap-3 px-6 py-3 bg-brand rounded-xl"
                       >
-                        <Calendar className="w-5 h-5 text-blue-400" />
-                        <span className="text-white">
+                        <Calendar className="w-5 h-5 text-brand" />
+                        <span className="text-ink">
                           {new Date(tripData.dates.start).toLocaleDateString()} - {new Date(tripData.dates.end).toLocaleDateString()}
                         </span>
                       </motion.div>
                       <motion.div
                         whileHover={{ scale: 1.05 }}
-                        className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-xl backdrop-blur-sm"
+                        className="flex items-center gap-3 px-6 py-3 bg-brand rounded-xl"
                       >
-                        <Users className="w-5 h-5 text-purple-400" />
-                        <span className="text-white">{tripData.travelers} travelers</span>
+                        <Users className="w-5 h-5 text-brand" />
+                        <span className="text-ink">{tripData.travelers} travelers</span>
                       </motion.div>
                       <motion.div
                         whileHover={{ scale: 1.05 }}
-                        className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-xl backdrop-blur-sm"
+                        className="flex items-center gap-3 px-6 py-3 bg-brand rounded-xl"
                       >
                         <DollarSign className="w-5 h-5 text-green-400" />
-                        <span className="text-white">${tripData.totalBudget}</span>
+                        <span className="text-ink">${tripData.totalBudget}</span>
                       </motion.div>
                       <motion.div
                         whileHover={{ scale: 1.05 }}
-                        className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-pink-500/20 to-pink-600/20 rounded-xl backdrop-blur-sm"
+                        className="flex items-center gap-3 px-6 py-3 bg-brand rounded-xl"
                       >
                         <Heart className="w-5 h-5 text-pink-400" />
-                        <span className="text-white capitalize">{tripData.tripStyle} style</span>
+                        <span className="text-ink capitalize">{tripData.tripStyle} style</span>
                       </motion.div>
                     </div>
                   </div>
@@ -830,33 +830,33 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                 className="space-y-8"
               >
                 {/* Day Header */}
-                <Card className="bg-black/20 backdrop-blur-xl border-white/10 shadow-2xl overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10" />
+                <Card className="bg-surface border-line overflow-hidden">
+                  <div className="absolute inset-0 bg-brand" />
                   <CardContent className="relative p-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="flex items-center gap-6">
                         <motion.div
                           animate={{ scale: [1, 1.05, 1] }}
                           transition={{ duration: 2, repeat: Infinity, delay: dayIndex * 0.5 }}
-                          className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center text-white text-2xl shadow-xl"
+                          className="w-20 h-20 bg-brand rounded-3xl flex items-center justify-center text-ink text-2xl"
                         >
                           {day.day}
                         </motion.div>
                         <div>
-                          <h2 className="text-3xl text-white mb-2">Day {day.day} - {day.city}</h2>
-                          <p className="text-white/70 text-lg">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                          <h2 className="text-3xl text-ink mb-2">Day {day.day} - {day.city}</h2>
+                          <p className="text-ink-muted text-lg">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-3 text-white/80">
+                        <div className="flex items-center gap-3 text-ink-muted">
                           <span className="text-3xl">{day.weather.icon}</span>
                           <div>
                             <div className="text-xl">{day.weather.temperature}</div>
-                            <div className="text-sm text-white/60">{day.weather.condition}</div>
+                            <div className="text-sm text-ink-subtle">{day.weather.condition}</div>
                           </div>
                         </div>
-                        <Badge className="bg-gradient-to-r from-green-500/20 to-green-600/20 text-green-300 border-green-500/30 px-4 py-2 text-lg">
+                        <Badge className="bg-brand text-green-300 border-green-500/30 px-4 py-2 text-lg">
                           ${day.budget.total}
                         </Badge>
                       </div>
@@ -867,8 +867,8 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   {/* Activities */}
                   <div className="lg:col-span-2 space-y-6">
-                    <h3 className="text-2xl text-white flex items-center gap-3">
-                      <Clock className="w-6 h-6 text-blue-400" />
+                    <h3 className="text-2xl text-ink flex items-center gap-3">
+                      <Clock className="w-6 h-6 text-brand" />
                       Activities & Experiences
                     </h3>
 
@@ -884,8 +884,8 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                             whileHover={{ scale: 1.02, y: -5 }}
                             className="group"
                           >
-                            <Card className="bg-black/20 backdrop-blur-xl border-white/10 hover:border-white/20 transition-all duration-500 shadow-xl overflow-hidden group">
-                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <Card className="bg-surface border-line hover:border-line transition-all duration-500 overflow-hidden group">
+                              <div className="absolute inset-0 bg-brand opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                               <CardContent className="relative p-0 flex flex-col md:flex-row h-full">
                                 {/* Activity Image */}
                                 <div className="w-full md:w-48 h-48 md:h-auto relative overflow-hidden">
@@ -894,10 +894,10 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                                     alt={activity.title}
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                   />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:bg-gradient-to-r" />
+                                  <div className="absolute inset-0 bg-brand md:bg-gradient-to-r" />
                                   <div className="absolute bottom-3 left-3 md:top-3 md:left-3">
-                                    <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
-                                      <IconComponent className="w-5 h-5 text-white" />
+                                    <div className="w-10 h-10 bg-surface rounded-xl flex items-center justify-center border border-line">
+                                      <IconComponent className="w-5 h-5 text-ink" />
                                     </div>
                                   </div>
                                 </div>
@@ -907,10 +907,10 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                                   <div>
                                     <div className="flex items-start justify-between gap-4 mb-2">
                                       <div>
-                                        <h4 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors">
+                                        <h4 className="text-xl font-semibold text-ink group-hover:text-brand transition-colors">
                                           {activity.title}
                                         </h4>
-                                        <div className="flex items-center gap-3 text-white/70 text-sm mt-1">
+                                        <div className="flex items-center gap-3 text-ink-muted text-sm mt-1">
                                           <div className="flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
                                             {activity.time} • {activity.duration}
@@ -928,11 +928,11 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                                       </Badge>
                                     </div>
 
-                                    <p className="text-white/70 text-sm leading-relaxed line-clamp-2 mb-4">
+                                    <p className="text-ink-muted text-sm leading-relaxed line-clamp-2 mb-4">
                                       {activity.description}
                                     </p>
 
-                                    <div className="flex items-center gap-2 text-white/60 text-xs mb-4">
+                                    <div className="flex items-center gap-2 text-ink-subtle text-xs mb-4">
                                       <MapPin className="w-3 h-3" />
                                       <span className="truncate max-w-[300px]">
                                         {typeof activity.location === 'string' ? activity.location : activity.location?.name || 'Location not specified'}
@@ -940,7 +940,7 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                                  <div className="flex items-center justify-between pt-4 border-t border-line">
                                     <div className="flex items-center gap-3">
                                       {activity.cost > 0 ? (
                                         renderPriceScale(activity.cost, 5000)
@@ -960,7 +960,7 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                                           size="sm"
                                           variant="ghost"
                                           onClick={() => handleEdit(`activity-${activity.id}`, activity)}
-                                          className="text-white/50 hover:text-white hover:bg-white/10"
+                                          className="text-ink-subtle hover:text-ink hover:bg-surface"
                                         >
                                           <Edit3 className="w-4 h-4" />
                                         </Button>
@@ -986,10 +986,10 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ delay: dayIndex * 0.2 + 0.3, duration: 0.6 }}
                       >
-                        <Card className="bg-black/20 backdrop-blur-xl border-white/10 shadow-2xl overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5" />
+                        <Card className="bg-surface border-line overflow-hidden">
+                          <div className="absolute inset-0 bg-brand" />
                           <CardHeader className="relative pb-4">
-                            <CardTitle className="flex items-center justify-between text-white">
+                            <CardTitle className="flex items-center justify-between text-ink">
                               <div className="flex items-center gap-3">
                                 <Hotel className="w-6 h-6 text-green-400" />
                                 Accommodation
@@ -1000,7 +1000,7 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => handleEdit(`accommodation-${day.day}`, day.accommodation)}
-                                    className="text-white/70 hover:text-white hover:bg-white/10"
+                                    className="text-ink-muted hover:text-ink hover:bg-surface"
                                   >
                                     <Edit3 className="w-4 h-4" />
                                   </Button>
@@ -1020,8 +1020,8 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                               </div>
 
                               <div>
-                                <h4 className="text-lg text-white mb-2">{day.accommodation.name}</h4>
-                                <p className="text-white/70 mb-3">{day.accommodation.address}</p>
+                                <h4 className="text-lg text-ink mb-2">{day.accommodation.name}</h4>
+                                <p className="text-ink-muted mb-3">{day.accommodation.address}</p>
                                 <div className="flex items-center gap-3 mb-4">
                                   <div className="flex items-center">
                                     {[...Array(5)].map((_, i) => (
@@ -1029,11 +1029,11 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                                         key={i}
                                         className={`w-4 h-4 ${i < Math.floor(day.accommodation.rating)
                                           ? 'text-yellow-400 fill-current'
-                                          : 'text-gray-500'
+                                          : 'text-ink-muted'
                                           }`}
                                       />
                                     ))}
-                                    <span className="ml-2 text-white/70">
+                                    <span className="ml-2 text-ink-muted">
                                       {day.accommodation.rating}
                                     </span>
                                   </div>
@@ -1042,14 +1042,14 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                                   </span>
                                 </div>
 
-                                <div className="text-white/70 mb-4">
+                                <div className="text-ink-muted mb-4">
                                   <div>Check-in: {day.accommodation.checkIn}</div>
                                   <div>Check-out: {day.accommodation.checkOut}</div>
                                 </div>
 
                                 <div className="flex flex-wrap gap-2">
                                   {day.accommodation.amenities.slice(0, 3).map((amenity: string, i: number) => (
-                                    <Badge key={i} variant="secondary" className="bg-white/10 text-white/70 text-xs">
+                                    <Badge key={i} variant="secondary" className="bg-surface text-ink-muted text-xs">
                                       {amenity}
                                     </Badge>
                                   ))}
@@ -1067,34 +1067,34 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ delay: dayIndex * 0.2 + 0.4, duration: 0.6 }}
                     >
-                      <Card className="bg-black/20 backdrop-blur-xl border-white/10 shadow-2xl overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-yellow-500/5" />
+                      <Card className="bg-surface border-line overflow-hidden">
+                        <div className="absolute inset-0 bg-brand" />
                         <CardHeader className="relative pb-4">
-                          <CardTitle className="flex items-center gap-3 text-white">
+                          <CardTitle className="flex items-center gap-3 text-ink">
                             <DollarSign className="w-6 h-6 text-amber-400" />
                             Daily Budget
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="relative">
                           <div className="space-y-3">
-                            <div className="flex justify-between text-white/80">
+                            <div className="flex justify-between text-ink-muted">
                               <span>Accommodation</span>
                               <span>₹{day.budget.accommodation}</span>
                             </div>
-                            <div className="flex justify-between text-white/80">
+                            <div className="flex justify-between text-ink-muted">
                               <span>Food & Dining</span>
                               <span>₹{day.budget.food}</span>
                             </div>
-                            <div className="flex justify-between text-white/80">
+                            <div className="flex justify-between text-ink-muted">
                               <span>Activities</span>
                               <span>₹{day.budget.activities}</span>
                             </div>
-                            <div className="flex justify-between text-white/80">
+                            <div className="flex justify-between text-ink-muted">
                               <span>Transportation</span>
                               <span>₹{day.budget.transport}</span>
                             </div>
-                            <Separator className="bg-white/20" />
-                            <div className="flex justify-between text-white text-lg">
+                            <Separator className="bg-sunken" />
+                            <div className="flex justify-between text-ink text-lg">
                               <span>Total</span>
                               <span className="text-green-400">₹{day.budget.total}</span>
                             </div>
@@ -1116,17 +1116,17 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
               transition={{ delay: 0.8, duration: 0.8 }}
               className="mt-12"
             >
-              <Card className="bg-black/20 backdrop-blur-xl border-white/10 shadow-2xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-red-500/10 to-yellow-500/10" />
+              <Card className="bg-surface border-line overflow-hidden">
+                <div className="absolute inset-0 bg-brand" />
                 <CardHeader className="relative pb-4">
-                  <CardTitle className="flex items-center gap-3 text-white">
+                  <CardTitle className="flex items-center gap-3 text-ink">
                     <Car className="w-6 h-6 text-orange-400" />
                     Local Transport Analysis
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="relative text-white/80 space-y-6">
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <h4 className="text-lg text-white mb-2 font-semibold">
+                <CardContent className="relative text-ink-muted space-y-6">
+                  <div className="p-4 bg-surface rounded-xl border border-line">
+                    <h4 className="text-lg text-ink mb-2 font-semibold">
                       Recommended Mode: <span className="text-orange-400 capitalize">{tripData.local_transport.recommended_mode}</span>
                     </h4>
                     <p className="leading-relaxed whitespace-pre-line">{tripData.local_transport.analysis}</p>
@@ -1134,12 +1134,12 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {Object.entries(tripData.local_transport.mode_comparison || {}).map(([mode, data]: [string, any]) => (
-                      <div key={mode} className="p-4 bg-black/20 rounded-lg border border-white/5">
-                        <div className="capitalize text-white font-medium mb-1">{mode}</div>
+                      <div key={mode} className="p-4 bg-surface rounded-lg border border-white/5">
+                        <div className="capitalize text-ink font-medium mb-1">{mode}</div>
                         <div className="text-2xl text-orange-300 mb-1">
-                          {typeof data.avg_time_minutes === 'number' ? Math.round(data.avg_time_minutes) : 'N/A'} <span className="text-sm text-white/50">min</span>
+                          {typeof data.avg_time_minutes === 'number' ? Math.round(data.avg_time_minutes) : 'N/A'} <span className="text-sm text-ink-subtle">min</span>
                         </div>
-                        <div className="text-xs text-white/50">Average travel time</div>
+                        <div className="text-xs text-ink-subtle">Average travel time</div>
                       </div>
                     ))}
                   </div>
@@ -1158,25 +1158,25 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
               transition={{ delay: 0.9, duration: 0.8 }}
               className="mt-12"
             >
-              <Card className="bg-black/20 backdrop-blur-xl border-white/10 shadow-2xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 via-blue-500/10 to-indigo-500/10" />
+              <Card className="bg-surface border-line overflow-hidden">
+                <div className="absolute inset-0 bg-brand" />
                 <CardHeader className="relative pb-4">
-                  <CardTitle className="flex items-center gap-3 text-white">
-                    <Plane className="w-6 h-6 text-sky-400" />
+                  <CardTitle className="flex items-center gap-3 text-ink">
+                    <Plane className="w-6 h-6 text-brand" />
                     Recommended Flights
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="relative space-y-4">
                   {tripData.recommended_flights.map((flight: any, index: number) => (
-                    <div key={index} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                    <div key={index} className="p-4 bg-surface rounded-xl border border-line hover:bg-surface transition-colors">
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-sky-500/20 rounded-full flex items-center justify-center">
-                            <Plane className="w-6 h-6 text-sky-400" />
+                          <div className="w-12 h-12 bg-brand/20 rounded-full flex items-center justify-center">
+                            <Plane className="w-6 h-6 text-brand" />
                           </div>
                           <div>
-                            <h4 className="text-white font-semibold text-lg">{flight.airline}</h4>
-                            <div className="text-white/60 text-sm">
+                            <h4 className="text-ink font-semibold text-lg">{flight.airline}</h4>
+                            <div className="text-ink-subtle text-sm">
                               {flight.origin} → {flight.destination} • {flight.stops === 0 ? 'Direct' : `${flight.stops} Stop(s)`}
                             </div>
                           </div>
@@ -1184,14 +1184,14 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
 
                         <div className="flex items-center gap-6">
                           <div className="text-right">
-                            <div className="text-white font-medium">{flight.duration}</div>
-                            <div className="text-white/50 text-sm">Duration</div>
+                            <div className="text-ink font-medium">{flight.duration}</div>
+                            <div className="text-ink-subtle text-sm">Duration</div>
                           </div>
                           <div className="text-right">
                             <div className="text-sky-300 font-bold text-xl">₹{flight.price}</div>
-                            <div className="text-white/50 text-sm">per person</div>
+                            <div className="text-ink-subtle text-sm">per person</div>
                           </div>
-                          <Badge className="bg-sky-500/20 text-sky-300 border-sky-500/30">
+                          <Badge className="bg-brand/20 text-sky-300 border-brand/30">
                             Score: {flight.ai_score}
                           </Badge>
                         </div>
@@ -1210,27 +1210,27 @@ export function TripPlan({ tripData: rawTripData, onEdit, onClose }: TripPlanPro
             transition={{ delay: 1, duration: 0.8 }}
             className="mt-16"
           >
-            <Card className="bg-black/20 backdrop-blur-xl border-white/10 shadow-2xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10" />
+            <Card className="bg-surface border-line overflow-hidden">
+              <div className="absolute inset-0 bg-brand" />
               <CardContent className="relative p-8 text-center">
                 <motion.div
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6"
+                  className="w-16 h-16 bg-brand rounded-full flex items-center justify-center mx-auto mb-6"
                 >
-                  <CheckCircle className="w-8 h-8 text-white" />
+                  <CheckCircle className="w-8 h-8 text-ink" />
                 </motion.div>
-                <h3 className="text-2xl text-white mb-4">Your Perfect Trip Awaits!</h3>
-                <p className="text-white/70 mb-6 max-w-2xl mx-auto">
+                <h3 className="text-2xl text-ink mb-4">Your Perfect Trip Awaits!</h3>
+                <p className="text-ink-muted mb-6 max-w-2xl mx-auto">
                   This AI-curated itinerary is designed to give you the best possible experience in {typeof tripData.destination === 'string' ? tripData.destination : tripData.destination?.name || 'your destination'}.
                   All suggestions are based on your preferences and can be customized to your needs.
                 </p>
                 <div className="flex justify-center gap-4">
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 !text-white font-medium">
+                  <Button className="bg-brand hover:from-blue-700 hover:to-purple-700 !text-ink font-medium">
                     <Download className="w-4 h-4 mr-2" />
                     Download Itinerary
                   </Button>
-                  <Button variant="outline" className="border-white/20 !text-white hover:bg-white/10 hover:!text-white font-medium">
+                  <Button variant="outline" className="border-line !text-ink hover:bg-surface hover:!text-ink font-medium">
                     <Share2 className="w-4 h-4 mr-2" />
                     Share with Friends
                   </Button>

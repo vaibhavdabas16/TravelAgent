@@ -83,12 +83,12 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
   const getTypeColor = (type: string) => {
     const colors = {
       outdoor: 'bg-green-500/20 text-green-300',
-      cultural: 'bg-purple-500/20 text-purple-300',
+      cultural: 'bg-brand/20 text-purple-300',
       adventure: 'bg-red-500/20 text-red-300',
-      tour: 'bg-blue-500/20 text-blue-300',
+      tour: 'bg-brand/20 text-blue-300',
       workshop: 'bg-amber-500/20 text-amber-300'
     };
-    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-gray-300';
+    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-ink-subtle';
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -97,7 +97,7 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
       Moderate: 'bg-yellow-500/20 text-yellow-300',
       Challenging: 'bg-red-500/20 text-red-300'
     };
-    return colors[difficulty as keyof typeof colors] || 'bg-gray-500/20 text-gray-300';
+    return colors[difficulty as keyof typeof colors] || 'bg-gray-500/20 text-ink-subtle';
   };
 
   return (
@@ -112,15 +112,15 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="inline-block p-4 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-sm mb-6"
+          className="inline-block p-4 rounded-full bg-brand mb-6"
         >
           <Mountain className="w-8 h-8 text-green-400" />
         </motion.div>
 
-        <h2 className="text-3xl text-white mb-4">
+        <h2 className="text-3xl text-ink mb-4">
           Adventure Awaits
         </h2>
-        <p className="text-white/70 text-lg max-w-2xl mx-auto">
+        <p className="text-ink-muted text-lg max-w-2xl mx-auto">
           Choose exciting activities and unique experiences to make your trip unforgettable.
           From cultural tours to thrilling adventures, create lasting memories.
         </p>
@@ -145,8 +145,8 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
             >
               <Card className={`overflow-hidden cursor-pointer transition-all duration-300 ${isSelected
                 ? 'ring-2 ring-green-400 bg-green-500/10'
-                : 'bg-black/20 hover:bg-black/30'
-                } backdrop-blur-sm border-white/10`}>
+                : 'bg-surface hover:bg-black/30'
+                } border-line`}>
                 <div className="relative">
                   {/* Image */}
                   <div className="aspect-video overflow-hidden">
@@ -169,7 +169,7 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
                       transition={{ delay: 0.3 + index * 0.1 }}
                       className="absolute top-3 left-3"
                     >
-                      <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+                      <Badge className="bg-brand text-white border-0">
                         <Star className="w-3 h-3 mr-1" />
                         AI Suggested
                       </Badge>
@@ -186,7 +186,7 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
                         className="absolute top-3 right-3"
                       >
                         <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                          <Heart className="w-4 h-4 text-white fill-current" />
+                          <Heart className="w-4 h-4 text-ink fill-current" />
                         </div>
                       </motion.div>
                     )}
@@ -202,27 +202,27 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
 
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-white text-lg leading-tight">{activity.name}</h3>
+                    <h3 className="text-ink text-lg leading-tight">{activity.name}</h3>
                     <div className="flex items-center text-yellow-400 ml-2">
                       <Star className="w-4 h-4 fill-current" />
                       <span className="text-sm ml-1">{activity.rating}</span>
                     </div>
                   </div>
 
-                  <p className="text-white/70 text-sm mb-4 line-clamp-2">
+                  <p className="text-ink-muted text-sm mb-4 line-clamp-2">
                     {activity.description}
                   </p>
 
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <MapPin className="w-4 h-4 mr-2" />
                       {activity.location}
                     </div>
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <Clock className="w-4 h-4 mr-2" />
                       {activity.duration}
                     </div>
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <Users className="w-4 h-4 mr-2" />
                       {activity.groupSize}
                     </div>
@@ -237,12 +237,12 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
 
                   <div className="flex flex-wrap gap-1 mb-4">
                     {activity.includes.slice(0, 3).map((include) => (
-                      <Badge key={include} variant="secondary" className="text-xs bg-white/10 text-white/70">
+                      <Badge key={include} variant="secondary" className="text-xs bg-surface text-ink-muted">
                         {include}
                       </Badge>
                     ))}
                     {activity.includes.length > 3 && (
-                      <Badge variant="secondary" className="text-xs bg-white/10 text-white/70">
+                      <Badge variant="secondary" className="text-xs bg-surface text-ink-muted">
                         +{activity.includes.length - 3} more
                       </Badge>
                     )}
@@ -255,8 +255,8 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
                       variant={isSelected ? "default" : "outline"}
                       onClick={() => handleToggleActivity(activity.id)}
                       className={isSelected
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "border-white/20 text-white hover:bg-white/10"
+                        ? "bg-green-600 hover:bg-green-700 text-ink"
+                        : "border-line text-ink hover:bg-surface"
                       }
                     >
                       {isSelected ? (
@@ -288,9 +288,9 @@ export function ActivitiesSection({ planningData, onSelectionChange, isTransitio
             exit={{ opacity: 0, y: 20 }}
             className="mt-12 text-center"
           >
-            <div className="inline-flex items-center space-x-2 bg-green-500/20 rounded-full px-6 py-3 backdrop-blur-sm">
+            <div className="inline-flex items-center space-x-2 bg-green-500/20 rounded-full px-6 py-3">
               <Heart className="w-5 h-5 text-green-400" />
-              <span className="text-white">
+              <span className="text-ink">
                 {selectedActivities.length} activit{selectedActivities.length !== 1 ? 'ies' : 'y'} selected
               </span>
             </div>

@@ -135,13 +135,13 @@ export function AccommodationsSection({ planningData, onSelectionChange, isTrans
 
   const getTypeColor = (type: string) => {
     const colors = {
-      hotel: 'bg-blue-500/20 text-blue-300',
+      hotel: 'bg-brand/20 text-blue-300',
       hostel: 'bg-green-500/20 text-green-300',
-      airbnb: 'bg-purple-500/20 text-purple-300',
+      airbnb: 'bg-brand/20 text-purple-300',
       resort: 'bg-amber-500/20 text-amber-300',
       boutique: 'bg-pink-500/20 text-pink-300'
     };
-    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-gray-300';
+    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-ink-subtle';
   };
 
   return (
@@ -156,15 +156,15 @@ export function AccommodationsSection({ planningData, onSelectionChange, isTrans
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="inline-block p-4 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm mb-6"
+          className="inline-block p-4 rounded-full bg-brand mb-6"
         >
-          <Bed className="w-8 h-8 text-purple-400" />
+          <Bed className="w-8 h-8 text-brand" />
         </motion.div>
 
-        <h2 className="text-3xl text-white mb-4">
+        <h2 className="text-3xl text-ink mb-4">
           Find Your Perfect Stay
         </h2>
-        <p className="text-white/70 text-lg max-w-2xl mx-auto">
+        <p className="text-ink-muted text-lg max-w-2xl mx-auto">
           Choose accommodations that match your style and budget.
           From luxury hotels to cozy apartments, we've curated the best options.
         </p>
@@ -188,9 +188,9 @@ export function AccommodationsSection({ planningData, onSelectionChange, isTrans
               className="group"
             >
               <Card className={`overflow-hidden cursor-pointer transition-all duration-300 ${isSelected
-                ? 'ring-2 ring-purple-400 bg-purple-500/10'
-                : 'bg-black/20 hover:bg-black/30'
-                } backdrop-blur-sm border-white/10`}>
+                ? 'ring-2 ring-brand bg-brand/10'
+                : 'bg-surface hover:bg-black/30'
+                } border-line`}>
                 <div className="relative">
                   {/* Image */}
                   <div className="aspect-video overflow-hidden">
@@ -213,7 +213,7 @@ export function AccommodationsSection({ planningData, onSelectionChange, isTrans
                       transition={{ delay: 0.3 + index * 0.1 }}
                       className="absolute top-3 left-3"
                     >
-                      <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+                      <Badge className="bg-brand text-white border-0">
                         <Star className="w-3 h-3 mr-1" />
                         AI Suggested
                       </Badge>
@@ -229,8 +229,8 @@ export function AccommodationsSection({ planningData, onSelectionChange, isTrans
                         exit={{ opacity: 0, scale: 0.8 }}
                         className="absolute top-3 right-3"
                       >
-                        <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
-                          <Heart className="w-4 h-4 text-white fill-current" />
+                        <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center">
+                          <Heart className="w-4 h-4 text-ink fill-current" />
                         </div>
                       </motion.div>
                     )}
@@ -246,23 +246,23 @@ export function AccommodationsSection({ planningData, onSelectionChange, isTrans
 
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-white text-lg leading-tight">{accommodation.name}</h3>
+                    <h3 className="text-ink text-lg leading-tight">{accommodation.name}</h3>
                     <div className="flex items-center text-yellow-400 ml-2">
                       <Star className="w-4 h-4 fill-current" />
                       <span className="text-sm ml-1">{accommodation.rating}</span>
                     </div>
                   </div>
 
-                  <p className="text-white/70 text-sm mb-4 line-clamp-2">
+                  <p className="text-ink-muted text-sm mb-4 line-clamp-2">
                     {accommodation.description}
                   </p>
 
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <MapPin className="w-4 h-4 mr-2" />
                       {accommodation.location}
                     </div>
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <Bed className="w-4 h-4 mr-2" />
                       {accommodation.rooms} • {accommodation.guests} guest{accommodation.guests !== 1 ? 's' : ''}
                     </div>
@@ -273,28 +273,28 @@ export function AccommodationsSection({ planningData, onSelectionChange, isTrans
                     {accommodation.amenities.slice(0, 4).map((amenity) => {
                       const IconComponent = amenityIcons[amenity] || Coffee;
                       return (
-                        <Badge key={amenity} variant="secondary" className="text-xs bg-white/10 text-white/70 flex items-center">
+                        <Badge key={amenity} variant="secondary" className="text-xs bg-surface text-ink-muted flex items-center">
                           <IconComponent className="w-3 h-3 mr-1" />
                           {amenity}
                         </Badge>
                       );
                     })}
                     {accommodation.amenities.length > 4 && (
-                      <Badge variant="secondary" className="text-xs bg-white/10 text-white/70">
+                      <Badge variant="secondary" className="text-xs bg-surface text-ink-muted">
                         +{accommodation.amenities.length - 4} more
                       </Badge>
                     )}
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-purple-400">{accommodation.price}</span>
+                    <span className="text-brand">{accommodation.price}</span>
                     <Button
                       size="sm"
                       variant={isSelected ? "default" : "outline"}
                       onClick={() => handleToggleAccommodation(accommodation.id)}
                       className={isSelected
-                        ? "bg-purple-600 hover:bg-purple-700 text-white"
-                        : "border-white/20 text-white hover:bg-white/10"
+                        ? "bg-brand hover:bg-brand text-white"
+                        : "border-line text-ink hover:bg-surface"
                       }
                     >
                       {isSelected ? (
@@ -326,9 +326,9 @@ export function AccommodationsSection({ planningData, onSelectionChange, isTrans
             exit={{ opacity: 0, y: 20 }}
             className="mt-12 text-center"
           >
-            <div className="inline-flex items-center space-x-2 bg-purple-500/20 rounded-full px-6 py-3 backdrop-blur-sm">
-              <Heart className="w-5 h-5 text-purple-400" />
-              <span className="text-white">
+            <div className="inline-flex items-center space-x-2 bg-brand/20 rounded-full px-6 py-3">
+              <Heart className="w-5 h-5 text-brand" />
+              <span className="text-ink">
                 {selectedAccommodations.length} accommodation{selectedAccommodations.length !== 1 ? 's' : ''} selected
               </span>
             </div>

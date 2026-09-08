@@ -1,4 +1,3 @@
-import { motion } from 'motion/react';
 import { Check } from 'lucide-react';
 import type { PlanningStep } from '../lib/planning-steps';
 
@@ -9,46 +8,44 @@ interface StepRailProps {
 }
 
 /**
- * Progress rail across the top of the wizard. The old version was eight
- * anonymous dots; this labels each stage and lets you click back to a step you
- * have already completed.
+ * Progress rail across the top of the wizard. Completed steps are clickable;
+ * steps ahead are not, because the searches behind them depend on selections
+ * that have not been made yet.
  */
 export function StepRail({ steps, currentStep, onSelect }: StepRailProps) {
   return (
-    <nav aria-label="Planning progress" className="flex-1 min-w-0">
-      <ol className="flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto">
+    <nav aria-label="Planning progress" className="min-w-0 flex-1">
+      <ol className="flex items-center justify-center gap-0.5 overflow-x-auto sm:gap-1">
         {steps.map((step, index) => {
           const isDone = index < currentStep;
           const isCurrent = index === currentStep;
 
           return (
-            <li key={step.id} className="flex items-center shrink-0">
+            <li key={step.id} className="flex shrink-0 items-center">
               <button
                 type="button"
                 onClick={() => onSelect(index)}
                 disabled={!isDone}
                 aria-current={isCurrent ? 'step' : undefined}
                 title={step.name}
-                className={`group flex items-center gap-2 rounded-full px-2 py-1 transition-colors ${
-                  isDone ? 'cursor-pointer hover:bg-white/10' : 'cursor-default'
+                className={`flex items-center gap-2 rounded-md px-2 py-1 transition-colors ${
+                  isDone ? 'cursor-pointer hover:bg-sunken' : 'cursor-default'
                 }`}
               >
-                <motion.span
-                  animate={{ scale: isCurrent ? 1.15 : 1 }}
-                  transition={{ duration: 0.3 }}
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium ${
+                <span
+                  className={`tabular flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold transition-colors ${
                     isDone
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-brand text-white'
                       : isCurrent
-                        ? 'bg-blue-400 text-white ring-4 ring-blue-400/25'
-                        : 'bg-white/15 text-white/50'
+                        ? 'bg-brand text-white ring-4 ring-brand-soft'
+                        : 'bg-sunken text-ink-subtle'
                   }`}
                 >
-                  {isDone ? <Check className="w-3 h-3" /> : index + 1}
-                </motion.span>
+                  {isDone ? <Check className="h-3 w-3" /> : index + 1}
+                </span>
                 <span
-                  className={`hidden lg:inline text-xs whitespace-nowrap ${
-                    isCurrent ? 'text-white' : isDone ? 'text-white/70' : 'text-white/35'
+                  className={`hidden whitespace-nowrap text-xs lg:inline ${
+                    isCurrent ? 'font-medium text-ink' : isDone ? 'text-ink-muted' : 'text-ink-subtle'
                   }`}
                 >
                   {step.shortName}
@@ -56,7 +53,12 @@ export function StepRail({ steps, currentStep, onSelect }: StepRailProps) {
               </button>
 
               {index < steps.length - 1 && (
-                <span className={`hidden sm:block w-3 lg:w-5 h-px mx-0.5 ${isDone ? 'bg-blue-500/60' : 'bg-white/15'}`} />
+                <span
+                  aria-hidden="true"
+                  className={`mx-0.5 hidden h-px w-3 sm:block lg:w-5 ${
+                    isDone ? 'bg-brand-line' : 'bg-line'
+                  }`}
+                />
               )}
             </li>
           );

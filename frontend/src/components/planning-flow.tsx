@@ -323,7 +323,7 @@ export function PlanningFlow() {
   const busy = isStarting || isLoadingStep || isSubmitting;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative">
+    <div className="relative min-h-screen bg-canvas">
       <AnimatePresence>
         {isStarting && (
           <PlanningProgress
@@ -351,11 +351,11 @@ export function PlanningFlow() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
-        className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/10"
+        className="fixed top-0 left-0 right-0 z-50 border-b border-line bg-surface"
       >
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <Button variant="ghost" onClick={handlePrevious} className="text-white hover:bg-white/10 shrink-0">
+            <Button variant="ghost" onClick={handlePrevious} className="shrink-0 text-ink-muted hover:bg-sunken hover:text-ink">
               <ArrowLeft className="w-4 h-4 mr-2" />
               {currentStep === 0 ? 'Back to Home' : 'Previous'}
             </Button>
@@ -372,8 +372,8 @@ export function PlanningFlow() {
               }}
             />
 
-            <div className="text-white shrink-0">
-              <span className="text-sm opacity-70">
+            <div className="shrink-0">
+              <span className="tabular text-sm text-ink-subtle">
                 Step {currentStep + 1} of {planningSteps.length}
               </span>
             </div>
@@ -384,7 +384,7 @@ export function PlanningFlow() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-2xl text-white mt-4"
+            className="mt-4 font-display text-2xl text-ink"
           >
             {currentStepData.name}
           </motion.h1>
@@ -405,15 +405,15 @@ export function PlanningFlow() {
             className="container mx-auto px-6"
           >
             {stepError ? (
-              <div className="max-w-lg mx-auto text-center bg-white/5 border border-white/10 rounded-2xl p-10">
-                <h2 className="text-xl text-white mb-3">Something went wrong</h2>
-                <p className="text-white/70 mb-8">{stepError}</p>
+              <div className="mx-auto max-w-lg rounded-lg border border-line bg-surface p-10 text-center">
+                <h2 className="mb-3 font-display text-2xl text-ink">Something went wrong</h2>
+                <p className="mb-8 text-ink-muted">{stepError}</p>
                 <div className="flex items-center justify-center gap-3">
-                  <Button onClick={handleRetry} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button onClick={handleRetry} className="bg-brand text-white hover:bg-brand-hover">
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Try again
                   </Button>
-                  <Button variant="ghost" onClick={() => navigate('/plan')} className="text-white hover:bg-white/10">
+                  <Button variant="ghost" onClick={() => navigate('/plan')} className="text-ink-muted hover:bg-sunken hover:text-ink">
                     Start over
                   </Button>
                 </div>
@@ -447,12 +447,12 @@ export function PlanningFlow() {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
-          className="fixed bottom-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-xl border-t border-white/10"
+          className="fixed bottom-0 left-0 right-0 z-50 border-t border-line bg-surface"
         >
           <div className="container mx-auto px-6 py-4">
             <div className="flex justify-between items-center">
-              <div className="text-white/70 text-sm">Choose the options that appeal to you most</div>
-              <Button onClick={handleNext} className="bg-blue-600 hover:bg-blue-700 text-white" disabled={busy}>
+              <div className="text-sm text-ink-muted">Choose the options that appeal to you most</div>
+              <Button onClick={handleNext} className="bg-brand text-white hover:bg-brand-hover" disabled={busy}>
                 {isSubmitting ? 'Saving…' : isLastStep ? 'Complete Planning' : 'Next Section'}
                 {!isSubmitting && !isLastStep && <ChevronRight className="w-4 h-4 ml-2" />}
                 {!isSubmitting && isLastStep && <Check className="w-4 h-4 ml-2" />}

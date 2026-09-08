@@ -269,20 +269,10 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 z-50 overflow-y-auto"
+      className="fixed inset-0 bg-canvas z-50 overflow-y-auto"
     >
 
       {/* Floating elements */}
-      <motion.div
-        animate={{ y: [-20, 20, -20], rotate: [0, 180, 360] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-20 right-20 w-32 h-32 bg-blue-200/20 rounded-full blur-xl pointer-events-none"
-      />
-      <motion.div
-        animate={{ y: [20, -20, 20], rotate: [360, 180, 0] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-32 left-16 w-24 h-24 bg-purple-200/20 rounded-full blur-xl pointer-events-none"
-      />
 
       {/* Full height content wrapper */}
       <div className="min-h-screen">
@@ -291,7 +281,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
           initial={{ y: -100 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur-lg border-b border-white/10 p-4 lg:p-6"
+          className="sticky top-0 z-10 bg-canvas/95 border-b border-line p-4 lg:p-6"
         >
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-4">
@@ -301,14 +291,14 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                 transition={{ delay: 0.3 }}
                 className="flex items-center gap-3"
               >
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand text-white">
+                  <Sparkles className="h-5 w-5" />
                 </div>
                 <div>
-                  <h1 className="text-xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  <h1 className="text-xl text-ink">
                     AI Travel Planner
                   </h1>
-                  <p className="text-sm text-gray-300">Creating your perfect itinerary</p>
+                  <p className="text-sm text-ink-subtle">Creating your perfect itinerary</p>
                 </div>
               </motion.div>
 
@@ -317,7 +307,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
                 onClick={onClose}
-                className="px-4 py-2 text-white/70 hover:text-white transition-colors"
+                className="px-4 py-2 text-ink-muted hover:text-ink transition-colors"
               >
                 ✕
               </motion.button>
@@ -329,11 +319,11 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/20 mb-3"
+                className="bg-surface px-3 py-2 rounded-lg border border-line mb-3"
               >
-                <p className="text-xs lg:text-sm text-gray-300">
-                  <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Your Travel Idea:</span>
-                  <span className="text-white ml-2">"{initialQuery || initialData?.query}"</span>
+                <p className="text-xs lg:text-sm text-ink-subtle">
+                  <span className="text-ink">Your Travel Idea:</span>
+                  <span className="text-ink ml-2">"{initialQuery || initialData?.query}"</span>
                 </p>
               </motion.div>
             )}
@@ -349,7 +339,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                   onClick={handlePrevious}
                   whileHover={{ scale: 1.02, x: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 rounded-lg text-white/90 hover:text-white transition-all duration-300 backdrop-blur-sm"
+                  className="flex items-center gap-2 px-4 py-2 bg-surface hover:bg-sunken border border-line hover:border-brand rounded-lg text-ink hover:text-ink transition-all duration-300"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span className="text-sm">Previous</span>
@@ -358,15 +348,15 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
             )}
 
             {/* Progress bar */}
-            <div className="w-full bg-white/20 rounded-full h-2">
+            <div className="w-full bg-sunken rounded-full h-2">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="h-2 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-full"
+                className="h-2 bg-brand rounded-full"
               />
             </div>
-            <p className="text-sm text-gray-300 mt-2">
+            <p className="text-sm text-ink-subtle mt-2">
               Step {currentQuestionIndex + 1} of {questionFlow.length}
             </p>
           </div>
@@ -391,9 +381,9 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
-                      className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                      className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-brand text-white"
                     >
-                      <currentQuestion.icon className="w-8 h-8 text-white" />
+                      <currentQuestion.icon className="h-8 w-8" />
                     </motion.div>
                   )}
 
@@ -402,7 +392,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    className="text-2xl lg:text-3xl text-white mb-6 lg:mb-8 px-4"
+                    className="text-2xl lg:text-3xl text-ink mb-6 lg:mb-8 px-4"
                   >
                     {currentQuestion.question}
                   </motion.h2>
@@ -419,9 +409,9 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"
+                          className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full"
                         />
-                        <span className="text-gray-300">Processing your answer...</span>
+                        <span className="text-ink-subtle">Processing your answer...</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -445,9 +435,9 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                               whileTap={{ scale: 0.98 }}
                               onClick={() => handleAnswer(option)}
                               disabled={isLoading}
-                              className="w-full p-4 text-left bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl hover:border-blue-400/50 hover:shadow-lg hover:bg-white/15 transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full p-4 text-left bg-surface border border-line rounded-xl hover:border-brand-line hover:bg-sunken transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <span className="text-white group-hover:text-blue-300 transition-colors">
+                              <span className="text-ink group-hover:text-brand transition-colors">
                                 {option}
                               </span>
                             </motion.button>
@@ -463,8 +453,8 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 * index }}
                                 className={`p-4 border rounded-xl cursor-pointer transition-all duration-300 ${selectedOptions.includes(option)
-                                  ? 'border-blue-400/50 bg-white/15 shadow-lg'
-                                  : 'border-white/20 bg-white/10 hover:border-blue-400/30 hover:shadow-md'
+                                  ? 'border-brand bg-brand-soft'
+                                  : 'border-line bg-surface hover:border-brand-line'
                                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 onClick={() => !isLoading && toggleMultiSelectOption(option)}
                               >
@@ -474,7 +464,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                                     onChange={() => toggleMultiSelectOption(option)}
                                     disabled={isLoading}
                                   />
-                                  <span className={selectedOptions.includes(option) ? 'text-blue-300' : 'text-white'}>
+                                  <span className={selectedOptions.includes(option) ? 'text-brand' : 'text-ink'}>
                                     {option}
                                   </span>
                                 </div>
@@ -489,7 +479,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                             <Button
                               onClick={handleMultiSelectAnswer}
                               disabled={selectedOptions.length === 0 || isLoading}
-                              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl disabled:opacity-50"
+                              className="px-8 py-3 bg-brand text-white rounded-xl disabled:opacity-50"
                             >
                               Continue with {selectedOptions.length} selection{selectedOptions.length !== 1 ? 's' : ''}
                             </Button>
@@ -501,7 +491,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                             <motion.div
                               initial={{ opacity: 0, scale: 0.9 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              className="bg-white p-4 rounded-xl border border-gray-200 shadow-lg"
+                              className="rounded-lg border border-line bg-surface p-4"
                             >
                               <CalendarComponent
                                 mode="range"
@@ -520,8 +510,8 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                                 onClick={() => setIsFlexibleDates(!isFlexibleDates)}
                                 disabled={isLoading}
                                 className={`px-6 py-3 rounded-xl border-2 transition-all ${isFlexibleDates
-                                  ? 'border-blue-400 bg-blue-50 text-blue-700'
-                                  : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300'
+                                  ? 'border-brand bg-brand-soft text-brand'
+                                  : 'border-line bg-surface text-ink hover:border-brand-line'
                                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                               >
                                 {isFlexibleDates ? '✓ ' : ''}I'm flexible with dates
@@ -530,7 +520,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                               <Button
                                 onClick={handleDateAnswer}
                                 disabled={(!dateRange.from && !isFlexibleDates) || isLoading}
-                                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl disabled:opacity-50"
+                                className="px-8 py-3 bg-brand text-white rounded-xl disabled:opacity-50"
                               >
                                 {isFlexibleDates ? 'Continue with flexible dates' : 'Continue with selected dates'}
                               </Button>
@@ -547,8 +537,8 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.05 * index }}
                                 className={`p-3 border rounded-xl cursor-pointer transition-all duration-300 ${selectedAmenities.includes(amenity)
-                                  ? 'border-blue-400/50 bg-white/15 shadow-lg'
-                                  : 'border-white/20 bg-white/10 hover:border-blue-400/30 hover:shadow-md'
+                                  ? 'border-brand bg-brand-soft'
+                                  : 'border-line bg-surface hover:border-brand-line'
                                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 onClick={() => !isLoading && toggleAmenity(amenity)}
                               >
@@ -558,7 +548,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                                     onChange={() => toggleAmenity(amenity)}
                                     disabled={isLoading}
                                   />
-                                  <span className={selectedAmenities.includes(amenity) ? 'text-blue-300' : 'text-white'}>
+                                  <span className={selectedAmenities.includes(amenity) ? 'text-brand' : 'text-ink'}>
                                     {amenity}
                                   </span>
                                 </div>
@@ -573,7 +563,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                                 value={customAmenity}
                                 onChange={(e) => setCustomAmenity(e.target.value)}
                                 placeholder="Add custom amenity..."
-                                className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                                className="flex-1 bg-surface border-line text-ink placeholder:text-ink-subtle"
                                 onKeyDown={(e) => e.key === 'Enter' && addCustomAmenity()}
                                 disabled={isLoading}
                               />
@@ -582,7 +572,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                                 disabled={!customAmenity.trim() || isLoading}
                                 variant="outline"
                                 size="sm"
-                                className="px-4 border-white/20 text-white/70 hover:text-white hover:border-white/40"
+                                className="px-4 border-line text-ink-muted hover:text-ink hover:border-brand"
                               >
                                 <Plus className="w-4 h-4" />
                               </Button>
@@ -595,7 +585,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                                   <Badge
                                     key={amenity}
                                     variant="secondary"
-                                    className="cursor-pointer hover:bg-red-100 bg-blue-500/20 text-blue-300 border-blue-400/30"
+                                    className="cursor-pointer border-brand-line bg-brand-soft text-brand hover:bg-critical-soft hover:text-critical"
                                     onClick={() => !isLoading && toggleAmenity(amenity)}
                                   >
                                     {amenity} ✕
@@ -609,7 +599,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                             <Button
                               onClick={handleAmenitiesAnswer}
                               disabled={selectedAmenities.length === 0 || isLoading}
-                              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl disabled:opacity-50"
+                              className="px-8 py-3 bg-brand text-white rounded-xl disabled:opacity-50"
                             >
                               Continue with {selectedAmenities.length} amenit{selectedAmenities.length !== 1 ? 'ies' : 'y'}
                             </Button>
@@ -624,7 +614,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                             onKeyDown={handleTextSubmit}
                             placeholder={currentQuestion.placeholder}
                             disabled={isLoading}
-                            className="w-full px-6 py-4 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-400 focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-6 py-4 text-lg rounded-xl border border-line-strong focus:border-brand focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             autoFocus
                           />
                           <motion.button
@@ -632,7 +622,7 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                             whileTap={{ scale: 0.9 }}
                             onClick={() => textInput.trim() && handleAnswer(textInput.trim())}
                             disabled={isLoading}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 bg-brand text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Send className="w-4 h-4" />
                           </motion.button>
@@ -663,17 +653,17 @@ export function PlanningInterface({ initialQuery, onClose, onViewTripPlan, onCom
                     </motion.div>
                   </motion.div>
 
-                  <h2 className="text-3xl text-white mb-4">
+                  <h2 className="text-3xl text-ink mb-4">
                     Perfect! Creating Your Itinerary
                   </h2>
-                  <p className="text-xl text-gray-300 mb-8">
+                  <p className="text-xl text-ink-subtle mb-8">
                     Our AI is crafting a personalized travel plan just for you...
                   </p>
 
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"
+                    className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full mx-auto"
                   />
                 </motion.div>
               )}

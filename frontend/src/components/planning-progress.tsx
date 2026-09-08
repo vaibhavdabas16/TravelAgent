@@ -24,28 +24,32 @@ export function PlanningProgress({ headline, destination, inline, stages }: Plan
   const body = (
     <div className="flex flex-col items-center text-center">
       {!stages?.length && (
-        <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6" />
+        <Loader2 className="mb-6 h-7 w-7 animate-spin text-ink-subtle" strokeWidth={1.5} />
       )}
 
-      <h2 className="text-2xl font-bold text-white mb-2">{headline}</h2>
-      {destination && <p className="text-white/70">Working through {destination}…</p>}
+      <h2 className="font-display text-2xl text-ink">{headline}</h2>
+      {destination && <p className="mt-2 text-ink-muted">Working through {destination}…</p>}
 
       {!!stages?.length && (
-        <ul className="mt-8 space-y-3 text-left w-full max-w-sm">
+        <ul className="mt-8 w-full max-w-sm space-y-3 text-left">
           {stages.map((stage) => (
             <li key={stage.id} className="flex items-center gap-3">
-              <span className="w-5 h-5 flex items-center justify-center shrink-0">
-                {stage.status === 'done' && <Check className="w-4 h-4 text-green-400" />}
-                {stage.status === 'active' && <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />}
-                {stage.status === 'pending' && <span className="w-2 h-2 rounded-full bg-white/25" />}
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                {stage.status === 'done' && <Check className="h-4 w-4 text-positive" />}
+                {stage.status === 'active' && (
+                  <Loader2 className="h-4 w-4 animate-spin text-brand" />
+                )}
+                {stage.status === 'pending' && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-line-strong" />
+                )}
               </span>
               <span
                 className={
                   stage.status === 'pending'
-                    ? 'text-white/40'
+                    ? 'text-ink-subtle'
                     : stage.status === 'active'
-                      ? 'text-white'
-                      : 'text-white/70'
+                      ? 'text-ink'
+                      : 'text-ink-muted'
                 }
               >
                 {stage.label}
@@ -58,7 +62,7 @@ export function PlanningProgress({ headline, destination, inline, stages }: Plan
   );
 
   if (inline) {
-    return <div className="py-24 flex justify-center">{body}</div>;
+    return <div className="flex justify-center py-24">{body}</div>;
   }
 
   return (
@@ -66,7 +70,7 @@ export function PlanningProgress({ headline, destination, inline, stages }: Plan
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center px-6"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-canvas/92 px-6 backdrop-blur-sm"
     >
       {body}
     </motion.div>

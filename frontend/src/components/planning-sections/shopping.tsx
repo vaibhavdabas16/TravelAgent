@@ -70,14 +70,14 @@ export function ShoppingSection({ planningData, onSelectionChange, isTransitioni
 
   const getTypeColor = (type: string) => {
     const colors = {
-      luxury: 'bg-purple-500/20 text-purple-300',
+      luxury: 'bg-brand/20 text-purple-300',
       markets: 'bg-green-500/20 text-green-300',
       boutiques: 'bg-pink-500/20 text-pink-300',
-      department: 'bg-blue-500/20 text-blue-300',
+      department: 'bg-brand/20 text-blue-300',
       vintage: 'bg-amber-500/20 text-amber-300',
       souvenirs: 'bg-orange-500/20 text-orange-300'
     };
-    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-gray-300';
+    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-ink-subtle';
   };
 
   return (
@@ -92,15 +92,15 @@ export function ShoppingSection({ planningData, onSelectionChange, isTransitioni
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="inline-block p-4 rounded-full bg-gradient-to-r from-pink-500/20 to-rose-500/20 backdrop-blur-sm mb-6"
+          className="inline-block p-4 rounded-full bg-brand mb-6"
         >
           <ShoppingBag className="w-8 h-8 text-pink-400" />
         </motion.div>
 
-        <h2 className="text-3xl text-white mb-4">
+        <h2 className="text-3xl text-ink mb-4">
           Shop & Explore Markets
         </h2>
-        <p className="text-white/70 text-lg max-w-2xl mx-auto">
+        <p className="text-ink-muted text-lg max-w-2xl mx-auto">
           Discover unique shopping experiences from luxury boutiques to charming local markets.
           Find perfect souvenirs and treat yourself to Parisian style.
         </p>
@@ -125,8 +125,8 @@ export function ShoppingSection({ planningData, onSelectionChange, isTransitioni
             >
               <Card className={`overflow-hidden cursor-pointer transition-all duration-300 ${isSelected
                 ? 'ring-2 ring-pink-400 bg-pink-500/10'
-                : 'bg-black/20 hover:bg-black/30'
-                } backdrop-blur-sm border-white/10`}>
+                : 'bg-surface hover:bg-black/30'
+                } border-line`}>
                 <div className="relative">
                   {/* Image */}
                   <div className="aspect-video overflow-hidden">
@@ -149,7 +149,7 @@ export function ShoppingSection({ planningData, onSelectionChange, isTransitioni
                       transition={{ delay: 0.3 + index * 0.1 }}
                       className="absolute top-3 left-3"
                     >
-                      <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+                      <Badge className="bg-brand text-white border-0">
                         <Star className="w-3 h-3 mr-1" />
                         AI Suggested
                       </Badge>
@@ -166,7 +166,7 @@ export function ShoppingSection({ planningData, onSelectionChange, isTransitioni
                         className="absolute top-3 right-3"
                       >
                         <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center">
-                          <Heart className="w-4 h-4 text-white fill-current" />
+                          <Heart className="w-4 h-4 text-ink fill-current" />
                         </div>
                       </motion.div>
                     )}
@@ -182,27 +182,27 @@ export function ShoppingSection({ planningData, onSelectionChange, isTransitioni
 
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-white text-lg leading-tight">{shopping.name}</h3>
+                    <h3 className="text-ink text-lg leading-tight">{shopping.name}</h3>
                     <div className="flex items-center text-yellow-400 ml-2">
                       <Star className="w-4 h-4 fill-current" />
                       <span className="text-sm ml-1">{shopping.rating}</span>
                     </div>
                   </div>
 
-                  <p className="text-white/70 text-sm mb-4 line-clamp-2">
+                  <p className="text-ink-muted text-sm mb-4 line-clamp-2">
                     {shopping.description}
                   </p>
 
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <MapPin className="w-4 h-4 mr-2" />
                       {shopping.location}
                     </div>
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <Clock className="w-4 h-4 mr-2" />
                       {shopping.hours}
                     </div>
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <Gift className="w-4 h-4 mr-2" />
                       {shopping.atmosphere}
                     </div>
@@ -211,12 +211,12 @@ export function ShoppingSection({ planningData, onSelectionChange, isTransitioni
                   {/* Specialties */}
                   <div className="flex flex-wrap gap-1 mb-4">
                     {shopping.specialties.slice(0, 3).map((specialty: string) => (
-                      <Badge key={specialty} variant="secondary" className="text-xs bg-white/10 text-white/70">
+                      <Badge key={specialty} variant="secondary" className="text-xs bg-surface text-ink-muted">
                         {specialty}
                       </Badge>
                     ))}
                     {shopping.specialties.length > 3 && (
-                      <Badge variant="secondary" className="text-xs bg-white/10 text-white/70">
+                      <Badge variant="secondary" className="text-xs bg-surface text-ink-muted">
                         +{shopping.specialties.length - 3} more
                       </Badge>
                     )}
@@ -229,8 +229,8 @@ export function ShoppingSection({ planningData, onSelectionChange, isTransitioni
                       variant={isSelected ? "default" : "outline"}
                       onClick={() => handleToggleShopping(shopping.id)}
                       className={isSelected
-                        ? "bg-pink-600 hover:bg-pink-700 text-white"
-                        : "border-white/20 text-white hover:bg-white/10"
+                        ? "bg-pink-600 hover:bg-pink-700 text-ink"
+                        : "border-line text-ink hover:bg-surface"
                       }
                     >
                       {isSelected ? (
@@ -262,9 +262,9 @@ export function ShoppingSection({ planningData, onSelectionChange, isTransitioni
             exit={{ opacity: 0, y: 20 }}
             className="mt-12 text-center"
           >
-            <div className="inline-flex items-center space-x-2 bg-pink-500/20 rounded-full px-6 py-3 backdrop-blur-sm">
+            <div className="inline-flex items-center space-x-2 bg-pink-500/20 rounded-full px-6 py-3">
               <Heart className="w-5 h-5 text-pink-400" />
-              <span className="text-white">
+              <span className="text-ink">
                 {selectedShopping.length} shopping destination{selectedShopping.length !== 1 ? 's' : ''} selected
               </span>
             </div>

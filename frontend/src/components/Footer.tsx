@@ -13,7 +13,7 @@ export function Footer() {
         src={oceanWaves}
       />
       <div className="absolute inset-0 bg-black/60" />
-      <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-8">
+      <div className="relative z-10 flex flex-col items-center justify-center h-full text-ink text-center px-8">
         <motion.h2 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -36,10 +36,10 @@ export function Footer() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="flex space-x-4"
         >
-          <a href="mailto:support@travel.com" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+          <a href="mailto:support@travel.com" className="bg-brand hover:bg-brand text-white font-bold py-3 px-6 rounded-lg transition-colors">
             Contact Us
           </a>
-          <a href="#" className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+          <a href="#" className="bg-sunken hover:bg-white/30 text-ink font-bold py-3 px-6 rounded-lg transition-colors">
             Learn More
           </a>
         </motion.div>

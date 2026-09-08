@@ -78,14 +78,14 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
 
   const getTypeColor = (type: string) => {
     const colors = {
-      spa: 'bg-purple-500/20 text-purple-300',
+      spa: 'bg-brand/20 text-purple-300',
       park: 'bg-green-500/20 text-green-300',
       garden: 'bg-emerald-500/20 text-emerald-300',
-      beach: 'bg-blue-500/20 text-blue-300',
+      beach: 'bg-brand/20 text-blue-300',
       thermal: 'bg-orange-500/20 text-orange-300',
       yoga: 'bg-pink-500/20 text-pink-300'
     };
-    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-gray-300';
+    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-ink-subtle';
   };
 
   const getTypeIcon = (type: string) => {
@@ -112,15 +112,15 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="inline-block p-4 rounded-full bg-gradient-to-r from-teal-500/20 to-cyan-500/20 backdrop-blur-sm mb-6"
+          className="inline-block p-4 rounded-full bg-brand mb-6"
         >
           <Waves className="w-8 h-8 text-teal-400" />
         </motion.div>
 
-        <h2 className="text-3xl text-white mb-4">
+        <h2 className="text-3xl text-ink mb-4">
           Wellness & Relaxation
         </h2>
-        <p className="text-white/70 text-lg max-w-2xl mx-auto">
+        <p className="text-ink-muted text-lg max-w-2xl mx-auto">
           Find peaceful spots to unwind and rejuvenate during your travels.
           From luxury spas to serene gardens, discover your perfect sanctuary.
         </p>
@@ -146,8 +146,8 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
             >
               <Card className={`overflow-hidden cursor-pointer transition-all duration-300 ${isSelected
                 ? 'ring-2 ring-teal-400 bg-teal-500/10'
-                : 'bg-black/20 hover:bg-black/30'
-                } backdrop-blur-sm border-white/10`}>
+                : 'bg-surface hover:bg-black/30'
+                } border-line`}>
                 <div className="relative">
                   {/* Image */}
                   <div className="aspect-video overflow-hidden">
@@ -170,7 +170,7 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
                       transition={{ delay: 0.3 + index * 0.1 }}
                       className="absolute top-3 left-3"
                     >
-                      <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+                      <Badge className="bg-brand text-white border-0">
                         <Star className="w-3 h-3 mr-1" />
                         AI Suggested
                       </Badge>
@@ -187,7 +187,7 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
                         className="absolute top-3 right-3"
                       >
                         <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center">
-                          <Heart className="w-4 h-4 text-white fill-current" />
+                          <Heart className="w-4 h-4 text-ink fill-current" />
                         </div>
                       </motion.div>
                     )}
@@ -204,27 +204,27 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
 
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-white text-lg leading-tight">{wellness.name}</h3>
+                    <h3 className="text-ink text-lg leading-tight">{wellness.name}</h3>
                     <div className="flex items-center text-yellow-400 ml-2">
                       <Star className="w-4 h-4 fill-current" />
                       <span className="text-sm ml-1">{wellness.rating}</span>
                     </div>
                   </div>
 
-                  <p className="text-white/70 text-sm mb-4 line-clamp-2">
+                  <p className="text-ink-muted text-sm mb-4 line-clamp-2">
                     {wellness.description}
                   </p>
 
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <MapPin className="w-4 h-4 mr-2" />
                       {wellness.location}
                     </div>
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <Clock className="w-4 h-4 mr-2" />
                       {wellness.duration}
                     </div>
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-ink-subtle text-sm">
                       <Sparkles className="w-4 h-4 mr-2" />
                       {wellness.atmosphere}
                     </div>
@@ -233,12 +233,12 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
                   {/* Features */}
                   <div className="flex flex-wrap gap-1 mb-4">
                     {wellness.features.slice(0, 3).map((feature: string) => (
-                      <Badge key={feature} variant="secondary" className="text-xs bg-white/10 text-white/70">
+                      <Badge key={feature} variant="secondary" className="text-xs bg-surface text-ink-muted">
                         {feature}
                       </Badge>
                     ))}
                     {wellness.features.length > 3 && (
-                      <Badge variant="secondary" className="text-xs bg-white/10 text-white/70">
+                      <Badge variant="secondary" className="text-xs bg-surface text-ink-muted">
                         +{wellness.features.length - 3} more
                       </Badge>
                     )}
@@ -246,7 +246,7 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
 
                   {/* Best time */}
                   <div className="mb-4">
-                    <Badge variant="outline" className="text-xs border-white/20 text-white/60">
+                    <Badge variant="outline" className="text-xs border-line text-ink-subtle">
                       Best: {wellness.bestTime}
                     </Badge>
                   </div>
@@ -258,8 +258,8 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
                       variant={isSelected ? "default" : "outline"}
                       onClick={() => handleToggleWellness(wellness.id)}
                       className={isSelected
-                        ? "bg-teal-600 hover:bg-teal-700 text-white"
-                        : "border-white/20 text-white hover:bg-white/10"
+                        ? "bg-teal-600 hover:bg-teal-700 text-ink"
+                        : "border-line text-ink hover:bg-surface"
                       }
                     >
                       {isSelected ? (
@@ -291,9 +291,9 @@ export function WellnessSection({ planningData, onSelectionChange, isTransitioni
             exit={{ opacity: 0, y: 20 }}
             className="mt-12 text-center"
           >
-            <div className="inline-flex items-center space-x-2 bg-teal-500/20 rounded-full px-6 py-3 backdrop-blur-sm">
+            <div className="inline-flex items-center space-x-2 bg-teal-500/20 rounded-full px-6 py-3">
               <Heart className="w-5 h-5 text-teal-400" />
-              <span className="text-white">
+              <span className="text-ink">
                 {selectedWellness.length} wellness spot{selectedWellness.length !== 1 ? 's' : ''} selected
               </span>
             </div>

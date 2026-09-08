@@ -56,7 +56,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999]"
+                        className="fixed inset-0 bg-black/80 z-[9999]"
                         style={{ zIndex: 9999 }}
                     />
 
@@ -68,15 +68,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-[9999]"
                         style={{ zIndex: 9999 }}
                     >
-                        <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="bg-canvas border border-line rounded-2xl overflow-hidden">
                             {/* Header */}
-                            <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                                <h2 className="text-xl font-semibold text-white">
+                            <div className="p-6 border-b border-line flex justify-between items-center">
+                                <h2 className="text-xl font-semibold text-ink">
                                     {isLogin ? 'Welcome Back' : 'Create Account'}
                                 </h2>
                                 <button
                                     onClick={onClose}
-                                    className="text-gray-400 hover:text-white transition-colors"
+                                    className="text-ink-subtle hover:text-ink transition-colors"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
@@ -91,15 +91,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 )}
                                 {!isLogin && (
                                     <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">Full Name</label>
+                                        <label className="text-sm text-ink-subtle">Full Name</label>
                                         <div className="relative">
-                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                                             <input
                                                 type="text"
                                                 required
                                                 value={formData.fullName}
                                                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                                className="w-full bg-surface border border-line rounded-lg py-2 pl-10 pr-4 text-ink focus:outline-none focus:border-brand transition-colors"
                                                 placeholder="John Doe"
                                             />
                                         </div>
@@ -107,30 +107,30 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 )}
 
                                 <div className="space-y-2">
-                                    <label className="text-sm text-gray-400">Email</label>
+                                    <label className="text-sm text-ink-subtle">Email</label>
                                     <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                                         <input
                                             type="email"
                                             required
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                            className="w-full bg-surface border border-line rounded-lg py-2 pl-10 pr-4 text-ink focus:outline-none focus:border-brand transition-colors"
                                             placeholder="you@example.com"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm text-gray-400">Password</label>
+                                    <label className="text-sm text-ink-subtle">Password</label>
                                     <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                                         <input
                                             type="password"
                                             required
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                            className="w-full bg-surface border border-line rounded-lg py-2 pl-10 pr-4 text-ink focus:outline-none focus:border-brand transition-colors"
                                             placeholder="••••••••"
                                         />
                                     </div>
@@ -139,7 +139,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 <Button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-6"
+                                    className="w-full bg-brand hover:bg-brand text-white mt-6"
                                 >
                                     {isLoading ? (
                                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -151,7 +151,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <button
                                         type="button"
                                         onClick={() => setIsLogin(!isLogin)}
-                                        className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                                        className="text-sm text-brand hover:text-blue-300 transition-colors"
                                     >
                                         {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                                     </button>

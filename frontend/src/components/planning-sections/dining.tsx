@@ -64,12 +64,12 @@ export function DiningSection({ planningData, onSelectionChange, isTransitioning
   const getTypeColor = (type: string) => {
     const colors = {
       'fine-dining': 'bg-amber-500/20 text-amber-300',
-      'casual': 'bg-blue-500/20 text-blue-300',
+      'casual': 'bg-brand/20 text-blue-300',
       'cafe': 'bg-green-500/20 text-green-300',
       'street-food': 'bg-orange-500/20 text-orange-300',
-      'bistro': 'bg-purple-500/20 text-purple-300'
+      'bistro': 'bg-brand/20 text-purple-300'
     };
-    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-gray-300';
+    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-ink-subtle';
   };
 
   return (
@@ -83,22 +83,22 @@ export function DiningSection({ planningData, onSelectionChange, isTransitioning
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="inline-block p-4 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 backdrop-blur-sm mb-6"
+          className="inline-block p-4 rounded-full bg-brand mb-6"
         >
           <ChefHat className="w-8 h-8 text-orange-400" />
         </motion.div>
 
-        <h2 className="text-3xl text-white mb-4">Savor Amazing Flavors</h2>
-        <p className="text-white/70 text-lg max-w-2xl mx-auto">
+        <h2 className="text-3xl text-ink mb-4">Savor Amazing Flavors</h2>
+        <p className="text-ink-muted text-lg max-w-2xl mx-auto">
           Discover incredible dining experiences from Michelin-starred restaurants to hidden local gems.
         </p>
       </motion.div>
 
       {sortedRestaurants.length === 0 ? (
-        <div className="text-center py-12 bg-white/5 rounded-xl backdrop-blur-sm border border-white/10">
-          <Utensils className="w-12 h-12 text-white/20 mx-auto mb-4" />
-          <h3 className="text-xl text-white mb-2">No restaurants found</h3>
-          <p className="text-white/60">We couldn't find any specific dining options for this destination.</p>
+        <div className="text-center py-12 bg-surface rounded-xl border border-line">
+          <Utensils className="w-12 h-12 text-ink/20 mx-auto mb-4" />
+          <h3 className="text-xl text-ink mb-2">No restaurants found</h3>
+          <p className="text-ink-subtle">We couldn't find any specific dining options for this destination.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -118,8 +118,8 @@ export function DiningSection({ planningData, onSelectionChange, isTransitioning
               >
                 <Card className={`overflow-hidden cursor-pointer transition-all duration-300 ${isSelected
                   ? 'ring-2 ring-orange-400 bg-orange-500/10'
-                  : 'bg-black/20 hover:bg-black/30'
-                  } backdrop-blur-sm border-white/10`}>
+                  : 'bg-surface hover:bg-black/30'
+                  } border-line`}>
                   <div className="relative">
                     <div className="aspect-video overflow-hidden">
                       <motion.img
@@ -138,7 +138,7 @@ export function DiningSection({ planningData, onSelectionChange, isTransitioning
                         transition={{ delay: 0.3 + index * 0.1 }}
                         className="absolute top-3 left-3"
                       >
-                        <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+                        <Badge className="bg-brand text-white border-0">
                           <Star className="w-3 h-3 mr-1" />
                           AI Suggested
                         </Badge>
@@ -154,7 +154,7 @@ export function DiningSection({ planningData, onSelectionChange, isTransitioning
                           className="absolute top-3 right-3"
                         >
                           <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
-                            <Heart className="w-4 h-4 text-white fill-current" />
+                            <Heart className="w-4 h-4 text-ink fill-current" />
                           </div>
                         </motion.div>
                       )}
@@ -169,23 +169,23 @@ export function DiningSection({ planningData, onSelectionChange, isTransitioning
 
                   <div className="p-5">
                     <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-white text-lg leading-tight">{restaurant.name}</h3>
+                      <h3 className="text-ink text-lg leading-tight">{restaurant.name}</h3>
                       <div className="flex items-center text-yellow-400 ml-2">
                         <Star className="w-4 h-4 fill-current" />
                         <span className="text-sm ml-1">{restaurant.rating}</span>
                       </div>
                     </div>
 
-                    <p className="text-white/70 text-sm mb-4 line-clamp-2">
+                    <p className="text-ink-muted text-sm mb-4 line-clamp-2">
                       {restaurant.description}
                     </p>
 
                     <div className="space-y-2 mb-4">
-                      <div className="flex items-center text-white/60 text-sm">
+                      <div className="flex items-center text-ink-subtle text-sm">
                         <MapPin className="w-4 h-4 mr-2" />
                         {restaurant.location}
                       </div>
-                      <div className="flex items-center text-white/60 text-sm">
+                      <div className="flex items-center text-ink-subtle text-sm">
                         <Utensils className="w-4 h-4 mr-2" />
                         {restaurant.specialty}
                       </div>
@@ -193,7 +193,7 @@ export function DiningSection({ planningData, onSelectionChange, isTransitioning
 
                     <div className="flex flex-wrap gap-1 mb-4">
                       {restaurant.cuisine.map((cuisine) => (
-                        <Badge key={cuisine} variant="secondary" className="text-xs bg-white/10 text-white/70">
+                        <Badge key={cuisine} variant="secondary" className="text-xs bg-surface text-ink-muted">
                           {cuisine}
                         </Badge>
                       ))}
@@ -206,8 +206,8 @@ export function DiningSection({ planningData, onSelectionChange, isTransitioning
                         variant={isSelected ? "default" : "outline"}
                         onClick={() => handleToggleRestaurant(restaurant.id)}
                         className={isSelected
-                          ? "bg-orange-600 hover:bg-orange-700 text-white"
-                          : "border-white/20 text-white hover:bg-white/10"
+                          ? "bg-orange-600 hover:bg-orange-700 text-ink"
+                          : "border-line text-ink hover:bg-surface"
                         }
                       >
                         {isSelected ? (
@@ -239,9 +239,9 @@ export function DiningSection({ planningData, onSelectionChange, isTransitioning
             exit={{ opacity: 0, y: 20 }}
             className="mt-12 text-center"
           >
-            <div className="inline-flex items-center space-x-2 bg-orange-500/20 rounded-full px-6 py-3 backdrop-blur-sm">
+            <div className="inline-flex items-center space-x-2 bg-orange-500/20 rounded-full px-6 py-3">
               <Heart className="w-5 h-5 text-orange-400" />
-              <span className="text-white">
+              <span className="text-ink">
                 {selectedRestaurants.length} restaurant{selectedRestaurants.length !== 1 ? 's' : ''} selected
               </span>
             </div>
