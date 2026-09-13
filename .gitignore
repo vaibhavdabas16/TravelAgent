@@ -101,3 +101,10 @@ coverage/
 # Git
 .gitignore~
 
+# ---- Agent tooling (local only) ----
+# Editor/agent scratch and vendored skill definitions: useful on a machine,
+# noise in the history.
+.claude/
+.agents/
+.hallmark/
+skills-lock.json
