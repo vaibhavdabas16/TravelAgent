@@ -47,4 +47,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 
 # No --reload: this image is the deployable artifact. Compose mounts the source
 # and overrides the command for local development.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+#
+# Migrations run here because init_db only creates tables when ENVIRONMENT=test,
+# and Render's free plan offers no pre-deploy hook. Without this the database is
+# empty and every auth request fails with a ProgrammingError. A migration failure
+# leaves persistence broken but the rest of the API usable, so log and start.
+CMD ["sh", "-c", "alembic upgrade head || echo 'WARNING: alembic upgrade failed - database-backed features will not work'; exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]

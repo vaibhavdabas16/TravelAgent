@@ -66,7 +66,9 @@ services:
       # Source mount + --reload gives edit-and-refresh during development. Drop
       # both to run the image exactly as it would run in production.
       - ./backend:/app
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    # Same migration step the image runs; compose overrides the command, so it
+    # has to be repeated here or a fresh volume starts with no tables.
+    command: ["sh", "-c", "alembic upgrade head; exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
 
   frontend:
     build:
