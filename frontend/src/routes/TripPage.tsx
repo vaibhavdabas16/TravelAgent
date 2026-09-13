@@ -14,7 +14,9 @@ import { FlightRow } from '../components/trip/FlightCard';
 import { LocalTransportPanel } from '../components/trip/LocalTransportPanel';
 import { buildTripModel } from '../lib/trip-model';
 import { formatDateRange, formatMinutes, pluralize } from '../lib/format';
-import { isTripSaved, loadTrip, loadTripFromLibrary, saveTrip, saveTripToLibrary } from '../lib/planning-storage';
+import { isTripSaved, loadTrip, loadTripFromLibrary, saveTrip } from '../lib/planning-storage';
+import { useAuth } from '../contexts/AuthContext';
+import { isSaved as isSavedAnywhere, loadTrip as loadSavedTrip, saveTrip as persistSavedTrip } from '../lib/saved-trips';
 
 type Tab = 'itinerary' | 'overview' | 'stay' | 'flights';
 
@@ -35,13 +37,43 @@ export function TripPage() {
   const [activeDay, setActiveDay] = useState(1);
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
+  // Optimistic from local storage, then reconciled against the account below.
   const [saved, setSaved] = useState(() => (sessionId ? isTripSaved(sessionId) : false));
 
   useEffect(() => {
     if (raw || !sessionId) return;
     const stored = loadTrip(sessionId) ?? loadTripFromLibrary(sessionId);
-    if (stored) setRaw(stored);
-  }, [sessionId, raw]);
+    if (stored) {
+      setRaw(stored);
+      return;
+    }
+    // Nothing in this browser: the trip may be saved to the account, which is
+    // how it opens on a different device.
+    let cancelled = false;
+    loadSavedTrip(isAuthenticated, sessionId)
+      .then((remote) => {
+        if (!cancelled && remote) setRaw(remote);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, raw, isAuthenticated]);
+
+  // Whether this trip is already kept is a server fact once signed in.
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    isSavedAnywhere(isAuthenticated, sessionId)
+      .then((v) => {
+        if (!cancelled) setSaved(v);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, isAuthenticated]);
 
   const trip = useMemo(() => buildTripModel(raw), [raw]);
   const removedIds = useMemo(() => new Set<string>(raw?.removedStopIds ?? []), [raw]);
@@ -57,19 +89,22 @@ export function TripPage() {
 
   const persist = (next: any) => {
     setRaw(next);
-    if (sessionId) {
-      saveTrip(sessionId, next);
-      if (isTripSaved(sessionId)) saveTripToLibrary(sessionId, next);
-    }
+    if (!sessionId) return;
+    saveTrip(sessionId, next);
+    // Keep the stored copy in step with edits, but only once it is saved:
+    // editing a trip should not silently start keeping it.
+    if (saved) void persistSavedTrip(isAuthenticated, sessionId, next);
   };
   const setRemoved = (id: string, removed: boolean) => {
     const current: string[] = raw?.removedStopIds ?? [];
     persist({ ...raw, removedStopIds: removed ? Array.from(new Set([...current, id])) : current.filter((x) => x !== id) });
   };
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!sessionId || !raw) return;
-    if (saveTripToLibrary(sessionId, raw)) {
+    if (await persistSavedTrip(isAuthenticated, sessionId, raw)) {
       setSaved(true);
+    } else if (isAuthenticated) {
+      toast.error('Could not save this trip. Try again in a moment.');
     } else {
       toast.error('Your browser blocked saving. Try outside private mode.');
     }

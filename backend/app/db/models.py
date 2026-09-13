@@ -4,7 +4,7 @@ SQLAlchemy Database Models for Phase 2.2
 
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Column, String, Integer, Float, DateTime, JSON, ForeignKey, Text, Boolean
+from sqlalchemy import Column, String, Integer, Float, DateTime, JSON, ForeignKey, Text, Boolean, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -196,18 +196,26 @@ class ItineraryItem(Base):
         return f"<ItineraryItem(trip_id={self.trip_id}, day={self.day_number}, order={self.sequence_order})>"
 
 
+class SavedTrip(Base):
+    """A finished itinerary a user chose to keep.
 
+    Distinct from Trip, which tracks a planning run through the LangGraph
+    workflow. This is the completed result the user pressed Save on, stored
+    whole so the trip page can rebuild from it without replanning.
+    """
+    __tablename__ = "saved_trips"
+    __table_args__ = (UniqueConstraint("user_id", "session_id", name="uq_saved_trips_user_session"),)
 
+    id = Column(String(36), primary_key=True)  # UUID
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    # The planner session id, which is how the frontend addresses a trip.
+    session_id = Column(String(64), nullable=False, index=True)
 
+    destination = Column(String(255), nullable=True)
+    dates = Column(String(100), nullable=True)
+    days = Column(Integer, default=0, nullable=False)
 
+    # The full trip payload the itinerary view renders.
+    trip = Column(JSON, nullable=False)
 
-
-
-
-
-
-
-
-
-
-
+    saved_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)

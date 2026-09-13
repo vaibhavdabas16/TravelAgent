@@ -66,6 +66,15 @@ export interface ItineraryStreamEvent {
   detail?: string;
 }
 
+/** A row in the trips list, as the backend returns it. */
+export interface SavedTripSummaryDTO {
+  id: string;
+  destination: string | null;
+  dates: string | null;
+  days: number;
+  saved_at: string;
+}
+
 export interface TripPOIsResponse {
   trip_id: string;
   destination: string;
@@ -306,6 +315,32 @@ class ApiService {
   async getPlanningSession(sessionId: string): Promise<any> {
     const response = await this.api.get(`/v2/planning/${sessionId}`);
     return response.data;
+  }
+
+  // --- Saved trips -----------------------------------------------------------
+  // Account-backed storage for "My trips". Guests fall back to localStorage;
+  // see lib/planning-storage.
+
+  async listSavedTrips(): Promise<SavedTripSummaryDTO[]> {
+    const response = await this.api.get<SavedTripSummaryDTO[]>('/v2/saved-trips');
+    return response.data;
+  }
+
+  async saveTrip(sessionId: string, trip: any): Promise<void> {
+    await this.api.put(`/v2/saved-trips/${sessionId}`, { session_id: sessionId, trip });
+  }
+
+  async getSavedTrip(sessionId: string): Promise<any | null> {
+    try {
+      const response = await this.api.get(`/v2/saved-trips/${sessionId}`);
+      return response.data?.trip ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteSavedTrip(sessionId: string): Promise<void> {
+    await this.api.delete(`/v2/saved-trips/${sessionId}`);
   }
 
   /**

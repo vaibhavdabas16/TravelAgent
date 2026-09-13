@@ -1,17 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/shared/Navbar';
 import { Footer } from '../components/shared/Footer';
 import { EmptyState } from '../components/shared/States';
 import { formatDateRange, parseDatesString, pluralize } from '../lib/format';
-import { listSavedTrips, removeTripFromLibrary } from '../lib/planning-storage';
+import { useAuth } from '../contexts/AuthContext';
+import { listTrips, removeTrip, type SavedTripSummary } from '../lib/saved-trips';
 
 /** Trips saved in this browser. */
 export function TripsPage() {
-  const [trips, setTrips] = useState(() => listSavedTrips());
-  const remove = (id: string) => {
-    removeTripFromLibrary(id);
-    setTrips(listSavedTrips());
+  const { isAuthenticated } = useAuth();
+  const [trips, setTrips] = useState<SavedTripSummary[]>([]);
+
+  // Signed in, these come from the account; as a guest, from this browser.
+  // Refetch when that changes, so signing in or out swaps the list.
+  useEffect(() => {
+    let cancelled = false;
+    listTrips(isAuthenticated)
+      .then((rows) => {
+        if (!cancelled) setTrips(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setTrips([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  const remove = async (id: string) => {
+    await removeTrip(isAuthenticated, id);
+    setTrips(await listTrips(isAuthenticated));
   };
 
   return (
@@ -21,7 +40,7 @@ export function TripsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="lc text-[length:var(--text-xl)]">Trips</h1>
-            <p className="text-[13px] text-muted">Saved in this browser.</p>
+            <p className="text-[13px] text-muted">{isAuthenticated ? 'Saved to your account.' : 'Saved in this browser. Sign in to keep them.'}</p>
           </div>
           <Link to="/plan" className="btn btn-primary no-underline">
             New trip

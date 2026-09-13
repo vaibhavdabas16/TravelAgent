@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api, User } from '../services/api';
+import { toast } from 'sonner';
+import { migrateLocalTripsToAccount } from '../lib/saved-trips';
 
 interface AuthContextType {
     user: User | null;
@@ -11,6 +13,24 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/**
+ * Hand any trips saved before signing in to the account.
+ *
+ * Without this, signing in would appear to lose them: the trips list reads
+ * from the account once authenticated, and guest trips live in localStorage.
+ * Never fatal — failing to move a trip must not fail the login.
+ */
+async function adoptGuestTrips(): Promise<void> {
+    try {
+        const moved = await migrateLocalTripsToAccount();
+        if (moved > 0) {
+            toast.success(moved === 1 ? 'Saved your trip to your account' : `Saved ${moved} trips to your account`);
+        }
+    } catch {
+        /* the trips stay where they are; nothing is lost */
+    }
+}
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -41,6 +61,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await api.login(email, password);
             const userData = await api.getCurrentUser();
             setUser(userData);
+            await adoptGuestTrips();
         } finally {
             setIsLoading(false);
         }
@@ -52,6 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await api.register(email, password, fullName);
             const userData = await api.getCurrentUser();
             setUser(userData);
+            await adoptGuestTrips();
         } finally {
             setIsLoading(false);
         }

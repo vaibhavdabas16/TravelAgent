@@ -166,10 +166,12 @@ app.add_middleware(
 # Include API routes
 from app.api.routes_v2 import router_v2
 from app.api.routes_planning import router as router_planning
+from app.api.routes_saved_trips import router_saved_trips
 
 app.include_router(router)  # V1 routes (Phase 1)
 app.include_router(router_v2)  # V2 routes (Phase 2.2)
 app.include_router(router_planning)  # Interactive Planning routes
+app.include_router(router_saved_trips)  # Saved trips ("My trips")
 app.include_router(router_monitoring)  # Monitoring routes (Phase 2.4)
 
 

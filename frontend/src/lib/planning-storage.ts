@@ -156,3 +156,22 @@ export function listSavedTrips(): SavedTripSummary[] {
     }))
     .sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1));
 }
+
+/**
+ * Read every locally saved trip and clear the store.
+ *
+ * Used once at login to move trips planned as a guest into the account. They
+ * are removed locally in the same step: a signed-in user reads their trips
+ * from the server, and leaving copies behind is what let one account see
+ * another's trips on a shared browser.
+ */
+export function takeLocalLibrary(): Array<{ sessionId: string; trip: any }> {
+  const lib = readLibrary();
+  const entries = Object.entries(lib).map(([sessionId, trip]) => ({ sessionId, trip }));
+  try {
+    localStorage.removeItem(LIBRARY_KEY);
+  } catch {
+    /* nothing to clean up */
+  }
+  return entries;
+}
