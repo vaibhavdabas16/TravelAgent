@@ -114,6 +114,9 @@ class SearchApiService:
         
         if return_date:
             params["return_date"] = return_date
+        else:
+            # The engine rejects a missing return_date unless told it is one-way.
+            params["flight_type"] = "one_way"
         
         return await self.search("flights", engine="google_flights", params=params)
 
