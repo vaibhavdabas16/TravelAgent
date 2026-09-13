@@ -370,14 +370,21 @@ class GoogleMapsService:
             return None
 
 
-# Global service instance
-_google_maps_service: Optional[GoogleMapsService] = None
+# Global service instance. Either GoogleMapsService or FoursquarePlacesService,
+# which expose the same methods and return the same dict shapes.
+_google_maps_service = None
 
 
-def get_google_maps_service() -> GoogleMapsService:
-    """Get or create the global GoogleMapsService instance."""
+def get_google_maps_service():
+    """Get or create the global maps/places service, per MAPS_PROVIDER."""
     global _google_maps_service
     if _google_maps_service is None:
-        _google_maps_service = GoogleMapsService()
+        if settings.maps_provider.lower() == "foursquare":
+            from app.services.places_foursquare import FoursquarePlacesService
+            _google_maps_service = FoursquarePlacesService()
+        else:
+            if not settings.google_maps_api_key:
+                raise RuntimeError("MAPS_PROVIDER=google requires GOOGLE_MAPS_API_KEY")
+            _google_maps_service = GoogleMapsService()
     return _google_maps_service
 

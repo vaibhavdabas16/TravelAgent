@@ -575,7 +575,14 @@ def enrich_with_photos(pois: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 @router.get("/photos/{reference}")
 async def get_photo(reference: str):
-    """Proxy for Google Places Photo API to hide API key."""
+    """Photo proxy. Google references are resolved with the server's key so it
+    never reaches the browser; Foursquare references carry their own URL."""
+    from app.services.places_foursquare import decode_photo_reference
+    direct = decode_photo_reference(reference)
+    if direct:
+        return RedirectResponse(direct)
+    if not settings.google_maps_api_key:
+        raise HTTPException(status_code=404, detail="Photo not available")
     url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference={reference}&key={settings.google_maps_api_key}"
     return RedirectResponse(url)
 

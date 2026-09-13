@@ -7,8 +7,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
-    # Google API Keys
-    google_maps_api_key: str
+    # Maps / places provider.
+    #   "google"     — Google Maps Platform (needs billing enabled on the project)
+    #   "foursquare" — Foursquare Places for POIs + Geoapify for geocoding/routing (no card needed)
+    maps_provider: str = "google"
+    google_maps_api_key: Optional[str] = None
+    foursquare_api_key: Optional[str] = None
+    geoapify_api_key: Optional[str] = None
+
     gemini_api_key: str
     gemini_api_key_1: Optional[str] = None
     gemini_api_key_2: Optional[str] = None
@@ -20,8 +26,8 @@ class Settings(BaseSettings):
         return [k for k in keys if k]
     
     # Amadeus API (Phase 2.3)
-    amadeus_api_key: str
-    amadeus_api_secret: str
+    amadeus_api_key: Optional[str] = None
+    amadeus_api_secret: Optional[str] = None
     amadeus_base_url: str = "https://test.api.amadeus.com"  # or https://api.amadeus.com for production
     
     # SerpAPI (Phase 2.3 - Week 5)

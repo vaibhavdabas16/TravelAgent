@@ -397,13 +397,18 @@ class GoogleRoutesProvider(RouteProvider):
 
 
 # Singleton instance
-_google_routes_provider: Optional[GoogleRoutesProvider] = None
+# Either GoogleRoutesProvider or GeoapifyRoutesProvider, per MAPS_PROVIDER.
+_google_routes_provider: Optional[RouteProvider] = None
 
 
-def get_google_routes_provider() -> GoogleRoutesProvider:
-    """Get or create the global GoogleRoutesProvider instance."""
+def get_google_routes_provider() -> RouteProvider:
+    """Get or create the global route provider."""
     global _google_routes_provider
     if _google_routes_provider is None:
-        _google_routes_provider = GoogleRoutesProvider()
+        if settings.maps_provider.lower() == "foursquare":
+            from app.services.providers.transport.geoapify_routes import GeoapifyRoutesProvider
+            _google_routes_provider = GeoapifyRoutesProvider()
+        else:
+            _google_routes_provider = GoogleRoutesProvider()
     return _google_routes_provider
 
