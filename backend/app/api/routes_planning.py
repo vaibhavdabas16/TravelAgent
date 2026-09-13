@@ -556,6 +556,8 @@ async def search_wellness(session_id: str, user_id: str = Depends(get_current_us
         logger.error(f"Error searching wellness: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+import httpx
+from fastapi import Response
 from fastapi.responses import RedirectResponse
 from app.config import settings
 
@@ -575,16 +577,43 @@ def enrich_with_photos(pois: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 @router.get("/photos/{reference}")
 async def get_photo(reference: str):
-    """Photo proxy. Google references are resolved with the server's key so it
-    never reaches the browser; Foursquare references carry their own URL."""
+    """Photo proxy.
+
+    Foursquare references decode to a plain CDN URL carrying no credentials,
+    so those can be redirected. Google needs the server key, and redirecting
+    would publish it: the key would travel in the Location header, which the
+    browser — and anyone curling this endpoint — can read. Fetch the bytes
+    server-side and return those instead, so the key stays here.
+    """
     from app.services.places_foursquare import decode_photo_reference
     direct = decode_photo_reference(reference)
     if direct:
         return RedirectResponse(direct)
     if not settings.google_maps_api_key:
         raise HTTPException(status_code=404, detail="Photo not available")
-    url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference={reference}&key={settings.google_maps_api_key}"
-    return RedirectResponse(url)
+
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=20.0) as client:
+            upstream = await client.get(
+                "https://maps.googleapis.com/maps/api/place/photo",
+                params={
+                    "maxwidth": 400,
+                    "photo_reference": reference,
+                    "key": settings.google_maps_api_key,
+                },
+            )
+    except httpx.HTTPError as exc:
+        logger.warning(f"Photo fetch failed: {exc}")
+        raise HTTPException(status_code=502, detail="Photo unavailable")
+
+    if upstream.status_code != 200:
+        raise HTTPException(status_code=404, detail="Photo not available")
+
+    return Response(
+        content=upstream.content,
+        media_type=upstream.headers.get("content-type", "image/jpeg"),
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 # --- Selection Requests ---
 
