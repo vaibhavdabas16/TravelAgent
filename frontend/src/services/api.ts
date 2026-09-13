@@ -105,29 +105,29 @@ class ApiService {
         if (error.response) {
           switch (error.response.status) {
             case 401:
-              toast.error('Authentication expired', { description: 'Please login again.' });
+              toast.error('You have been signed out', { description: 'Your session expired. Sign in again to continue.' });
               // Optionally clear token here
               this.setToken(null);
               break;
             case 403:
-              toast.error('Access Denied', { description: 'You do not have permission to perform this action.' });
+              toast.error('Not allowed', { description: 'Your account cannot do that.' });
               break;
             case 404:
-              toast.error('Not Found', { description: 'The requested resource was not found.' });
+              toast.error('We could not find that', { description: 'It may have expired. Start a new trip to continue.' });
               break;
             case 422:
-              toast.error('Validation Error', { description: message });
+              toast.error('Check your details', { description: message });
               break;
             case 500:
-              toast.error('Server Error', { description: 'Something went wrong on the server. Please try again later.' });
+              toast.error('The planner hit a problem', { description: 'A provider may be busy. Try again in a moment.' });
               break;
             default:
-              toast.error('Error', { description: message });
+              toast.error('That did not work', { description: message });
           }
         } else if (error.request) {
-          toast.error('Network Error', { description: 'Please check your internet connection.' });
+          toast.error('We could not reach the server', { description: 'Check your connection, or that the backend is running.' });
         } else {
-          toast.error('Error', { description: message });
+          toast.error('That did not work', { description: message });
         }
 
         return Promise.reject(error);

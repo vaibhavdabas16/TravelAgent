@@ -1,6 +1,6 @@
 # 💻 Intelligent Travel Agent — Frontend Documentation
 
-React 18 web application built with **TypeScript**, **Vite**, **TailwindCSS**, **Radix UI**, **Lucide React**, **Motion (Framer Motion)**, and **Sonner**.
+React 18 web application built with **TypeScript**, **Vite**, **Tailwind CSS v4**, **Lucide React**, **Leaflet** (map) and **Sonner** (toasts). Utility-grade UI: one typeface, monochrome, lists over cards, no decorative imagery.
 
 ---
 
@@ -9,54 +9,24 @@ React 18 web application built with **TypeScript**, **Vite**, **TailwindCSS**, *
 ```
 frontend/
 ├── src/
-│   ├── components/                  # Core React Components
-│   │   ├── hero-section.tsx         # Parallax hero landing page with natural language prompt input
-│   │   ├── navbar.tsx               # Top navigation header with Auth login/profile controls
-│   │   ├── login-modal.tsx          # User login and registration modal dialog
-│   │   ├── planning-flow.tsx        # Multi-step wizard state machine & API orchestrator
-│   │   ├── planning-interface.tsx   # Step 1: Initial questionnaire & preference selection
-│   │   ├── trip-plan.tsx            # Final itinerary view & dynamic hydration engine
-│   │   ├── trips-carousel.tsx       # Horizontal showcase carousel for curated trips
-│   │   ├── FeatureHighlightSection.tsx
-│   │   ├── ExperienceScrollSection.tsx
-│   │   ├── FeatureImageSection.tsx
-│   │   ├── MediaShowcaseSection.tsx
-│   │   ├── Footer.tsx
-│   │   ├── planning-sections/       # Specialized section selection step components
-│   │   │   ├── places-to-visit.tsx  # POI discovery & selection section
-│   │   │   ├── accommodations.tsx   # Hotel selection section with price & commute tags
-│   │   │   ├── dining.tsx           # Restaurant & culinary experience section
-│   │   │   ├── transportation.tsx   # Flight & local transit selection section
-│   │   │   ├── activities.tsx       # Adventure & cultural activity section
-│   │   │   ├── shopping.tsx         # Shopping & market experience section
-│   │   │   └── wellness.tsx         # Spa, nature & relaxation section
-│   │   ├── ui/                      # Primitive UI Components (Radix UI + Tailwind)
-│   │   │   ├── button.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── textarea.tsx
-│   │   │   ├── badge.tsx
-│   │   │   ├── separator.tsx
-│   │   │   ├── tooltip.tsx
-│   │   │   ├── avatar.tsx
-│   │   │   └── sonner.tsx           # Toast notification provider
-│   │   └── figma/
-│   │       └── ImageWithFallback.tsx# Image loader with graceful fallback
-│   ├── contexts/
-│   │   └── AuthContext.tsx          # Global JWT authentication context & session store
-│   ├── services/
-│   │   └── api.ts                   # Axios REST API service client with interceptors
-│   ├── utils/
-│   │   └── poi-mapper.ts            # Data mapping & normalization utilities
-│   ├── App.tsx                      # Top-level view router & state holder
-│   ├── main.tsx                     # React DOM entrypoint
-│   └── index.css                    # Tailwind directives & glassmorphism CSS
-├── public/                          # Static public assets
-├── package.json                     # NPM dependencies and scripts
-├── vite.config.ts                   # Vite bundler configuration
-├── tailwind.config.js               # TailwindCSS configuration
-├── tsconfig.json                    # TypeScript compiler options
-└── .env.example                     # Environment template file
+│   ├── routes/
+│   │   ├── HomePage.tsx             # Landing: headline, natural-language prompt, three facts
+│   │   ├── PlanPage.tsx             # Planner: the brief, then one addressable step per search
+│   │   ├── TripPage.tsx             # Itinerary: day timeline + map, Overview / Stay / Flights tabs
+│   │   └── TripsPage.tsx            # Trips saved in this browser
+│   ├── components/
+│   │   ├── shared/                  # Navbar, Footer, LoginModal, Photo, Toaster, empty/error states
+│   │   ├── planning/                # TripPrompt, TripBrief, SelectionStep, PlaceRow, StepRail, PlanningProgress
+│   │   └── trip/                    # DaySelector, ItineraryTimeline, MapPanel, HotelRow, FlightRow, LocalTransportPanel
+│   ├── lib/
+│   │   ├── trip-parser.ts           # Free text → destination, dates, travelers, budget, styles (client-side)
+│   │   ├── trip-model.ts            # Normalises the API payload into the view model; never invents fields
+│   │   ├── format.ts                # Money, durations, dates, photo/coord helpers (null when data is missing)
+│   │   ├── planning-steps.ts        # Step order shared by router and planner
+│   │   └── planning-storage.ts      # sessionStorage working copy + localStorage saved-trips library
+│   ├── services/api.ts              # Axios client: auth, planning endpoints, SSE itinerary stream
+│   ├── contexts/AuthContext.tsx     # JWT session
+│   └── index.css                    # Design tokens and the .btn / .field / .chip / .list / .row primitives
 ```
 
 ---
@@ -91,36 +61,33 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## 🔄 Core Frontend Workflows
 
-### **1. Authentication State (`AuthContext.tsx`)**
-- Persists JWT tokens in `localStorage` (`auth_token`).
-- Automatically attaches token to Axios headers via `api.setToken(token)`.
-- Restores session on load via `getCurrentUser()`.
+### **1. Authentication (`AuthContext.tsx`)**
+- Persists JWT tokens in `localStorage` (`auth_token`), attaches them via an Axios interceptor, restores the session with `getCurrentUser()`.
 
-### **2. Step-by-Step Planning Wizard (`PlanningFlow.tsx`)**
-State machine coordinating the 8-step wizard:
-1. `questionnaire` (`PlanningInterface`): User enters destination, dates, travelers, budget, pace, interests. Triggers `api.startPlanning()`.
-2. `places` (`PlacesToVisitSection`): Calls `api.discoverPlaces()`. User selects POIs.
-3. `accommodations` (`AccommodationsSection`): Calls `api.searchAccommodations()`. User selects hotels.
-4. `dining` (`DiningSection`): Calls `api.searchDining()`. User selects restaurants.
-5. `transportation` (`TransportationSection`): Calls `api.searchTransport()`. User selects flights/transit.
-6. `activities` (`ActivitiesSection`): Calls `api.searchActivities()`.
-7. `shopping` (`ShoppingSection`): Calls `api.searchShopping()`.
-8. `wellness` (`WellnessSection`): Calls `api.searchWellness()`. Triggers `api.generateItinerary(sessionId)`.
+### **2. The brief (`/plan`)**
+- The visitor types one sentence. `trip-parser.ts` extracts destination, origin, dates, travelers, budget tier (`budget | moderate | luxury`, the values the backend scores against), pace, travel styles and stay must-haves.
+- Everything extracted is shown as editable fields ("Here's what we understood"). Nothing already answered is asked again.
+- Continue calls `api.startPlanning()` and redirects to `/plan/:sessionId/places`.
 
-### **3. Dynamic Itinerary Hydration (`TripPlan.tsx`)**
-The `hydrateItinerary` function transforms the raw API response into a rich visual display:
-- Maps place IDs to Google Photos references.
-- Calculates daily budget breakdowns (Accommodation + Food + Activities + Transport).
-- Formats price levels into Rupee scale (`₹` to `₹₹₹₹₹`).
-- Renders day-by-day activity timelines with category icons (`sightseeing`, `food`, `activity`, `culture`, `wellness`).
+### **3. Selection steps (`/plan/:sessionId/:stepId`)**
+`places → accommodations → dining → transportation → activities → shopping → wellness`. Entering a step runs its search once and caches the result in sessionStorage, so back/refresh never re-bills the providers. Leaving a step posts its selections. From the stay step onward, "Skip ahead and build my itinerary" is available. The final build streams stage progress over SSE (`api.streamItinerary`).
+
+### **4. Itinerary (`/trip/:sessionId`)**
+`trip-model.ts` turns `{ itinerary: [{ day, title, stops, transport_legs }], recommended_hotels, recommended_flights, local_transport }` into a view model. Travel legs (mode, duration, distance) come straight from the backend; day insights ("stops are grouped within ~3 km") are derived from those legs only. Stops have no fabricated clock times, prices, weather or descriptions — a missing field hides its element. Selecting a timeline item highlights the map marker and vice versa. "Save trip" promotes the session copy to a localStorage library that backs **My trips**.
 
 ---
 
-## 🎨 Design Tokens & UI Aesthetics
+## 🎨 Design System
 
-- **Color Palette:** Dark luxury theme using slate gradients (`from-slate-900 via-purple-900 to-slate-900`), vibrant purple/blue accents (`bg-gradient-to-r from-blue-500 to-purple-500`).
-- **Glassmorphism:** CSS backdrop blur filters (`backdrop-blur-xl`, `bg-black/20`, `border-white/10`).
-- **Animations:** Fluid transitions powered by `motion/react` (Framer Motion).
+Built with the [Hallmark](https://skills.sh/nutlope/hallmark) design skill — genre **atmospheric**, theme **Lumen** in both of its drops (**Night Foundry** dark by default, **Day Foundry** light via the sun/moon toggle in the nav — `lib/theme.ts`, persisted in `localStorage`, system preference as the fallback, applied before first paint by a script in `index.html`), macrostructure **Marquee Hero**. Tokens live in `frontend/tokens.css` (OKLCH, `--space-*`, `--text-*`, `--ease-*`, `--dur-*`), imported by `src/index.css` and mapped onto Tailwind v4 `@theme` names so components use `bg-paper`, `text-ink`, `border-rule`, `text-accent`.
+
+- **Canvas** cool-violet near-black `oklch(13% .014 265)`; elevated surfaces step lighter. **Accent** molten brass `oklch(76% .17 50)` for the one primary button, selection, focus and the apparatus; **coral chord** `oklch(68% .16 18)` only for the single verb landmark in a headline.
+- **Type** Instrument Serif (display, roman, lowercase for authored copy — data is never transformed) · Geist (body) · JetBrains Mono (UPPERCASE readouts: eyebrows, meta, `kbd`).
+- **Landing** Marquee Hero on a blueprint grid: lowercase serif statement left, the **apparatus** right (`components/landing/Apparatus.tsx` — the seven real agent/provider files orbiting the planning session, light walking the edges), a **meter strip** of real counts, then the prompt, the pipeline as a four-column **ledger** (stage · does · calls · returns, every value read from `routes_planning.py`), three honest numbers, and an Ft5 statement footer.
+- **Nav** N5 floating pill (fixed on the landing page, in-flow above a sticky context bar on product pages); the ⌘K / Ctrl K palette (`components/shared/CommandPalette.tsx`) remains the fast path.
+- **Motion** three primitives — apparatus pulse + edge walk · reveal (section heads, verb underline) · card lift — all behind `prefers-reduced-motion`. The map's tiles are inverted into the palette with a CSS filter.
+
+Project memory for the skill is in `.hallmark/` (`preflight.json`, `log.json`); the next `hallmark` run rotates away from this structure, nav and footer.
 
 ---
 

@@ -4,10 +4,21 @@
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Voyage — AI Travel Planner</title>
+      <title>Voyage — a trip plan from one sentence</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     </head>
 
     <body>
+      <script>
+        // Apply the saved (or system) palette drop before first paint.
+        try {
+          var d = localStorage.getItem('voyage:drop');
+          if (!d) d = matchMedia('(prefers-color-scheme: light)').matches ? 'day' : 'night';
+          if (d === 'day') document.documentElement.dataset.theme = 'day';
+        } catch (e) {}
+      </script>
       <div id="root"></div>
       <script type="module" src="/src/main.tsx"></script>
     </body>

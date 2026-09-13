@@ -1,0 +1,160 @@
+/* Hallmark · genre: atmospheric · macrostructure: Marquee Hero · theme: Lumen (drop: night) · enrichment: apparatus / codebase-graph · nav: N5 · footer: Ft5
+ * tone: technical · anchor hue: 265 (cool-violet night) · accent: molten brass 50 · accent-2: coral chord 18
+ * audience: hiring managers + engineers evaluating a demo · use: run the agent on a real trip and read why it chose
+ * Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V5
+ */
+
+:root {
+  /* Canvas — late-night studio, violet tilt. Never #000. */
+  --color-paper: oklch(13% 0.014 265);
+  --color-paper-2: oklch(17% 0.016 265);
+  --color-paper-3: oklch(21% 0.018 265);
+  --color-rule: oklch(26% 0.016 265);
+  --color-rule-2: oklch(34% 0.018 265);
+  --rule-blueprint: oklch(96% 0.006 262 / 0.04);
+
+  /* Ink — near-white headlines, light grey body */
+  --color-ink: oklch(96% 0.006 262);
+  --color-ink-2: oklch(86% 0.008 262);
+  --color-muted: oklch(68% 0.012 264);
+  --color-subtle: oklch(58% 0.012 264);
+
+  /* Accent — molten brass emits; coral chord is the verb landmark */
+  --color-accent: oklch(76% 0.17 50);
+  --color-accent-2: oklch(68% 0.16 18);
+  --color-accent-ink: oklch(14% 0.02 50);
+  --color-accent-soft: oklch(76% 0.17 50 / 0.12);
+  --color-glow: oklch(80% 0.16 50 / 0.42);
+  --color-glow-2: oklch(80% 0.16 50 / 0.16);
+  --color-paper-emit: oklch(76% 0.17 50 / 0.04);
+  --color-focus: oklch(76% 0.17 50);
+  --color-scrim: oklch(8% 0.012 265 / 0.6);
+
+  /* Kept for components that address the darker band explicitly */
+  --color-graphite: oklch(10% 0.012 265);
+  --color-graphite-2: oklch(15% 0.014 265);
+  --color-graphite-rule: oklch(26% 0.016 265);
+  --color-graphite-ink: oklch(96% 0.006 262);
+  --color-graphite-muted: oklch(68% 0.012 264);
+
+  /* Semantic — informational only */
+  --color-positive: oklch(74% 0.13 155);
+  --color-warning: oklch(78% 0.14 80);
+  --color-critical: oklch(70% 0.17 25);
+  --color-critical-soft: oklch(70% 0.17 25 / 0.14);
+
+  /* Category coding on stops — a dot and a label, never a fill */
+  --color-cat-sight: oklch(76% 0.13 265);
+  --color-cat-eat: oklch(78% 0.15 55);
+  --color-cat-stay: oklch(76% 0.14 300);
+  --color-cat-act: oklch(76% 0.13 155);
+  --color-cat-shop: oklch(76% 0.15 350);
+  --color-cat-well: oklch(78% 0.11 195);
+  --color-cat-fun: oklch(76% 0.15 35);
+  --color-cat-other: oklch(68% 0.012 264);
+
+  /* Type — Instrument Serif display (lowercase, roman) · Geist body · JetBrains Mono readouts */
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-body: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --tracking-micro: 0.1em;
+
+  /* Scale — major third from 16px; display in the serif runs larger */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.5rem;
+  --text-xl: 2rem;
+  --text-2xl: 2.5rem;
+  --text-display-s: clamp(2.25rem, 3.5vw + 1rem, 3.25rem);
+  --text-display: clamp(3rem, 6vw + 1rem, 5.5rem);
+  --text-stat: clamp(2.5rem, 4vw + 1rem, 4.5rem);
+
+  /* Space — 4pt, named by role */
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --page-gutter: clamp(1rem, 4vw, 2.5rem);
+
+  /* Hairlines; depth is for chrome only */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --rule: 1px solid var(--color-rule);
+  --shadow-lift: 0 24px 60px -28px oklch(0% 0 0 / 0.55);
+  --shadow-menu: 0 8px 24px -12px oklch(0% 0 0 / 0.5), 0 24px 60px -28px oklch(0% 0 0 / 0.55);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+  --dur-reveal: 600ms;
+  --dur-pulse: 4s;
+
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-nav: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+}
+
+/* Lumen · Day Foundry drop. Same apparatus, opposite physics: the light is
+   refracted, not emitted — accent goes deep indigo, canvas goes cool bone. */
+:root[data-theme="day"] {
+  --color-paper: oklch(97% 0.008 265);
+  --color-paper-2: oklch(99% 0.004 265);
+  --color-paper-3: oklch(94% 0.01 265);
+  --color-rule: oklch(88% 0.012 265);
+  --color-rule-2: oklch(80% 0.016 265);
+  --rule-blueprint: oklch(18% 0.014 265 / 0.045);
+
+  --color-ink: oklch(18% 0.014 265);
+  --color-ink-2: oklch(30% 0.016 265);
+  --color-muted: oklch(46% 0.016 265);
+  --color-subtle: oklch(54% 0.014 265);
+
+  --color-accent: oklch(46% 0.24 268);
+  --color-accent-2: oklch(58% 0.18 18);
+  --color-accent-ink: oklch(99% 0.004 265);
+  --color-accent-soft: oklch(46% 0.24 268 / 0.1);
+  --color-glow: oklch(58% 0.22 268 / 0.28);
+  --color-glow-2: oklch(58% 0.22 268 / 0.1);
+  --color-paper-emit: oklch(46% 0.24 268 / 0.03);
+  --color-focus: oklch(46% 0.24 268);
+  --color-scrim: oklch(18% 0.014 265 / 0.4);
+
+  --color-graphite: oklch(13% 0.014 265);
+  --color-graphite-2: oklch(17% 0.016 265);
+  --color-graphite-rule: oklch(26% 0.016 265);
+  --color-graphite-ink: oklch(96% 0.006 262);
+  --color-graphite-muted: oklch(68% 0.012 264);
+
+  --color-positive: oklch(48% 0.13 155);
+  --color-warning: oklch(58% 0.14 80);
+  --color-critical: oklch(52% 0.17 25);
+  --color-critical-soft: oklch(52% 0.17 25 / 0.1);
+
+  --color-cat-sight: oklch(50% 0.16 265);
+  --color-cat-eat: oklch(58% 0.15 55);
+  --color-cat-stay: oklch(52% 0.16 300);
+  --color-cat-act: oklch(52% 0.13 155);
+  --color-cat-shop: oklch(54% 0.16 350);
+  --color-cat-well: oklch(54% 0.11 195);
+  --color-cat-fun: oklch(56% 0.15 35);
+  --color-cat-other: oklch(46% 0.016 265);
+
+  --shadow-lift: 0 24px 60px -28px oklch(18% 0.014 265 / 0.25);
+  --shadow-menu: 0 8px 24px -12px oklch(18% 0.014 265 / 0.25), 0 24px 60px -28px oklch(18% 0.014 265 / 0.2);
+}
