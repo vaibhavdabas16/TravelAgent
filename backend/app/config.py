@@ -85,6 +85,10 @@ class Settings(BaseSettings):
     pinecone_index_name: str = "travel-agent-pois"
     
     # Redis Cache (Phase 2.4)
+    # Managed Redis (Render, Upstash, Railway) hands out one connection string
+    # carrying credentials and, over the public internet, TLS. REDIS_URL wins
+    # when set; the host/port fields stay as the local fallback.
+    redis_url: Optional[str] = None
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_db: int = 0

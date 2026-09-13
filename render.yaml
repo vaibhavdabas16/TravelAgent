@@ -58,16 +58,13 @@ services:
         fromDatabase:
           name: travel-agent-db
           property: password
-      - key: REDIS_HOST
+      # One string rather than host/port: it carries the credentials, and the
+      # cache falls back to localhost if this is missing.
+      - key: REDIS_URL
         fromService:
           name: travel-agent-cache
           type: redis
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          name: travel-agent-cache
-          type: redis
-          property: port
+          property: connectionString
 
       # --- runtime config ---
       - key: ENVIRONMENT
@@ -84,8 +81,22 @@ services:
       - key: CORS_ORIGINS
         sync: false
 
+      # "google" needs billing enabled on the Google Cloud project; set this to
+      # "foursquare" to run on the free-tier providers below instead.
+      - key: MAPS_PROVIDER
+        value: google
+
       # --- secrets: set in the Render dashboard, never committed ---
+      # Required only when MAPS_PROVIDER=google.
       - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      # Required only when MAPS_PROVIDER=foursquare.
+      - key: FOURSQUARE_API_KEY
+        sync: false
+      - key: GEOAPIFY_API_KEY
+        sync: false
+      # searchapi.io, used for flight lookups.
+      - key: SEARCH_API_KEY
         sync: false
       - key: GEMINI_API_KEY
         sync: false

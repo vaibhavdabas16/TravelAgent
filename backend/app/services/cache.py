@@ -22,6 +22,19 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
+def _redact(url: str) -> str:
+    """Connection strings carry a password; never log one verbatim."""
+    from urllib.parse import urlsplit, urlunsplit
+    parts = urlsplit(url)
+    if parts.password:
+        host = parts.hostname or ""
+        if parts.port:
+            host = f"{host}:{parts.port}"
+        user = parts.username or ""
+        parts = parts._replace(netloc=f"{user}:***@{host}")
+    return urlunsplit(parts)
+
+
 class CacheService:
     """
     Centralized caching service with multiple layers and TTL strategies.
@@ -49,19 +62,28 @@ class CacheService:
             bool: True if connected, False otherwise
         """
         try:
-            self.redis_client = redis.Redis(
-                host=settings.redis_host,
-                port=settings.redis_port,
-                db=settings.redis_db,
+            common = dict(
                 decode_responses=True,
                 socket_connect_timeout=2,
-                socket_timeout=2
+                socket_timeout=2,
             )
+            if settings.redis_url:
+                # rediss:// carries TLS; from_url reads scheme, auth and db.
+                self.redis_client = redis.Redis.from_url(settings.redis_url, **common)
+                target = _redact(settings.redis_url)
+            else:
+                self.redis_client = redis.Redis(
+                    host=settings.redis_host,
+                    port=settings.redis_port,
+                    db=settings.redis_db,
+                    **common
+                )
+                target = f"{settings.redis_host}:{settings.redis_port}"
             
             # Test connection
             await self.redis_client.ping()
             self.connected = True
-            logger.info(f"✓ Redis connected: {settings.redis_host}:{settings.redis_port}")
+            logger.info(f"✓ Redis connected: {target}")
             return True
             
         except Exception as e:
