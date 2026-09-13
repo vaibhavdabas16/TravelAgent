@@ -3,6 +3,7 @@ Vector Store Service using Pinecone for semantic POI search (Phase 2.2)
 """
 
 import logging
+import math
 from typing import List, Dict, Optional, Any
 
 from pinecone import Pinecone, ServerlessSpec
@@ -84,14 +85,23 @@ class VectorStoreService:
         import time
         
         try:
-            # Use Gemini's embedding model
+            # models/embedding-001 and text-embedding-004 were retired; this is
+            # the current model. It defaults to 3072 dims, so ask for the 768 the
+            # index was built with.
             result = genai.embed_content(
-                model="models/embedding-001",
+                model="models/gemini-embedding-001",
                 content=text,
-                task_type="retrieval_document"
+                task_type="retrieval_document",
+                output_dimensionality=self.embedding_dim
             )
             
             embedding = result['embedding']
+            
+            # Only the full-size 3072-dim output is returned normalised; reduced
+            # dimensions come back unnormalised and need rescaling.
+            norm = math.sqrt(sum(v * v for v in embedding))
+            if norm:
+                embedding = [v / norm for v in embedding]
             
             # Ensure correct dimensionality
             if len(embedding) != self.embedding_dim:
