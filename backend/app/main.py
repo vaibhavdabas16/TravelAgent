@@ -9,17 +9,25 @@ from app.config import settings
 from app.api.routes import router
 from app.api.routes_monitoring import router_monitoring
 
-# Configure logging
-# Configure logging
+# Configure logging. Writing backend.log is a local-development convenience:
+# in a container the working directory belongs to root while the process runs
+# as an unprivileged user, and the platform captures stdout anyway. Fall back
+# to stdout rather than refusing to start.
+_handlers = [logging.StreamHandler()]
+_log_file_error = None
+try:
+    _handlers.append(logging.FileHandler("backend.log", mode='a', encoding='utf-8'))
+except OSError as exc:
+    _log_file_error = exc
+
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper()),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("backend.log", mode='a', encoding='utf-8')
-    ]
+    handlers=_handlers
 )
 logger = logging.getLogger(__name__)
+if _log_file_error is not None:
+    logger.info(f"File logging off ({_log_file_error.strerror}); stdout only")
 
 
 @asynccontextmanager
