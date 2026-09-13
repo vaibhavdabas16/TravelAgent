@@ -267,6 +267,17 @@ async def delete_trip(trip_id: str):
     return {"message": "Trip deleted successfully", "trip_id": trip_id}
 
 
+@router.get("/health/live")
+async def liveness_check():
+    """Liveness probe for container and platform health checks.
+
+    Deliberately touches no provider: /health calls Gemini and Google Maps on
+    every request, so polling it on an interval burns free-tier quota and can
+    take the app down by itself. Use /health to check the providers on demand.
+    """
+    return {"status": "alive"}
+
+
 @router.get("/health", response_model=HealthCheckResponse)
 async def health_check():
     """

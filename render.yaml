@@ -33,9 +33,14 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    plan: starter
+    # Free spins down after ~15 minutes idle; the next request pays a cold
+    # start while this image loads OR-Tools and the LangGraph stack. Bump to
+    # starter if the demo needs to answer immediately.
+    plan: free
     region: oregon
-    healthCheckPath: /api/v1/health
+    # /health calls Gemini and Google Maps on every request; polling it would
+    # burn the free-tier quota. This one touches nothing.
+    healthCheckPath: /api/v1/health/live
     envVars:
       # --- wired automatically from the managed services above ---
       - key: DATABASE_HOST

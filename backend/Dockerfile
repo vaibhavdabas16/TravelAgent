@@ -43,7 +43,7 @@ USER appuser
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD curl -fsS http://localhost:8000/api/v1/health || exit 1
+    CMD curl -fsS http://localhost:8000/api/v1/health/live || exit 1
 
 # No --reload: this image is the deployable artifact. Compose mounts the source
 # and overrides the command for local development.
