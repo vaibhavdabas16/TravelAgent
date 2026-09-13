@@ -18,7 +18,9 @@
 databases:
   - name: travel-agent-db
     databaseName: travel_agent
-    user: postgres
+    # No `user:` — Render reserves "postgres" as the managed superuser and
+    # rejects it here. It generates one instead, and DATABASE_USER below
+    # picks up whatever that is.
     plan: free
 
 services:
