@@ -1,6 +1,6 @@
 # ⚙️ Intelligent Travel Agent — Backend Documentation
 
-FastAPI backend service powering the multi-agent travel engine built with **LangGraph**, **Google OR-Tools**, **PostgreSQL**, **Redis**, **Amadeus API**, **Google Maps Platform**, and **Pinecone**.
+FastAPI backend service powering the multi-agent travel engine built with **LangGraph**, **Google OR-Tools**, **PostgreSQL**, **Redis**, **Amadeus API**, **Google Maps Platform** (or the free Foursquare + Geoapify alternative), and **Pinecone**.
 
 ---
 
@@ -27,11 +27,12 @@ backend/
 │   │   ├── routes.py                # V1 Legacy Endpoint Controllers
 │   │   ├── routes_v2.py             # V2 Auth, User & Trip Persistence Endpoints
 │   │   ├── routes_planning.py       # V2 Multi-Step Wizard Planning Endpoints
+│   │   ├── routes_saved_trips.py    # "My trips" CRUD, scoped to the caller
 │   │   ├── routes_monitoring.py     # System Health & Cache Statistics Endpoints
 │   │   └── deps.py                  # FastAPI Auth & Database Dependencies
 │   ├── db/                          # Database Client & ORM
 │   │   ├── session.py               # Async SQLAlchemy Engine & Session Generator
-│   │   └── models.py                # User, Trip, POI SQLAlchemy ORM Models
+│   │   └── models.py                # User, Trip, POI, SavedTrip SQLAlchemy ORM Models
 │   ├── models/                      # Schemas & State Types
 │   │   ├── schemas.py               # Pydantic Request/Response DTOs
 │   │   └── state.py                 # TravelAgentState TypedDict
@@ -54,14 +55,16 @@ backend/
 │       ├── places.py
 │       └── scoring.py
 ├── tests/                           # Consolidated PyTest Test Suite
-│   ├── test_agents.py
 │   ├── test_amadeus_flights.py
 │   ├── test_amadeus_integration.py
 │   ├── test_caching.py
 │   ├── test_complete_integration.py
 │   ├── test_end_to_end.py
 │   ├── test_google_routes.py
+│   ├── test_optimizer.py
+│   ├── test_optimizer_integration.py
 │   ├── test_phase2_end_to_end.py
+│   ├── test_week4_agents.py
 │   └── test_week5_price_comparison.py
 ├── alembic.ini                      # Alembic Configuration File
 ├── main.py                          # Uvicorn Script Entrypoint Wrapper
@@ -94,33 +97,18 @@ pip install -r requirements.txt
 ```
 
 ### **2. Environment Variables File (`backend/.env`)**
-Create a `.env` file inside `backend/` by copying `env.example`:
+`env.example` is the annotated source of truth for every variable name — copy it rather than retyping, since names must match `app/config.py` exactly:
 
-```ini
-# --- Core LLM & Maps Credentials ---
-GOOGLE_MAPS_API_KEY=AIzaSy...
-GEMINI_API_KEY=AIzaSy...
-
-# --- Travel Provider Credentials ---
-AMADEUS_CLIENT_ID=your_amadeus_client_id
-AMADEUS_CLIENT_SECRET=your_amadeus_client_secret
-SERPAPI_KEY=your_serpapi_key
-
-# --- Vector Database ---
-PINECONE_API_KEY=your_pinecone_api_key
-PINECONE_INDEX_NAME=travel-pois
-
-# --- Database & Caching ---
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/travel_db
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_DB=0
-
-# --- Security ---
-JWT_SECRET=supersecretjwtkey_change_in_production
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10080
+```bash
+cp env.example .env   # then fill in your keys
 ```
+
+Key points that aren't obvious from the names alone:
+- `MAPS_PROVIDER` selects `google` (needs `GOOGLE_MAPS_API_KEY`, billing enabled) or `foursquare` (needs `FOURSQUARE_API_KEY` + `GEOAPIFY_API_KEY`, no card required).
+- The database connection is built from `DATABASE_HOST` / `PORT` / `NAME` / `USER` / `PASSWORD` — there is no `DATABASE_URL`.
+- `REDIS_URL`, when set, wins over `REDIS_HOST` / `REDIS_PORT`; this is how a hosted Redis connection string (Render, Upstash, Railway) is wired in. Redis is optional everywhere — the app runs uncached if it's unreachable.
+- SearchApi.io and Gemini accept extra numbered keys (`SEARCH_API_KEY1`..`4`, `GEMINI_API_KEY_1`..`3`) that are pooled for basic key rotation under quota.
+- `JWT_SECRET_KEY` falls back to a published placeholder if unset — always set a real value outside local dev.
 
 ---
 
@@ -156,12 +144,28 @@ alembic revision --autogenerate -m "Add new field to trips table"
 - `POST /api/v2/planning/{session_id}/dining/search` — Discovers restaurants matching vibe.
 - `POST /api/v2/planning/{session_id}/activities/search` — Discovers adventure/cultural activities.
 - `POST /api/v2/planning/{session_id}/shopping/search` — Discovers local markets and shopping districts.
-- `POST /api/v2/planning/{session_id}/wellness/search` — Discovers spss, parks, and relaxation spots.
+- `POST /api/v2/planning/{session_id}/wellness/search` — Discovers spas, parks, and relaxation spots.
 - `POST /api/v2/planning/{session_id}/itinerary/generate` — Executes the OR-Tools optimization engine and returns final day-by-day itinerary.
+- `POST /api/v2/planning/{session_id}/itinerary/stream` — Same as above, streamed stage-by-stage over SSE.
+- `GET /api/v2/planning/photos/{reference}` — Fetches a place photo server-side and returns the bytes, so the underlying provider key is never exposed to the client.
 
-### **3. Monitoring & System Status (`/api/monitoring`)**
-- `GET /api/monitoring/health` — Returns system health status and provider connectivity.
+### **3. Saved Trips (`/api/v2/saved-trips`)**
+"My trips" for signed-in users, scoped to the caller by `user_id`. Anonymous users fall back to localStorage on the frontend; on login, locally saved trips are migrated here and the local copies dropped.
+- `PUT /api/v2/saved-trips/{session_id}` — Create or replace the saved copy of a finished trip. Idempotent.
+- `GET /api/v2/saved-trips` — List this user's saved trips (summary rows), newest first.
+- `GET /api/v2/saved-trips/{session_id}` — Return one saved trip in full.
+- `DELETE /api/v2/saved-trips/{session_id}` — Remove a saved trip.
+
+### **4. Monitoring & System Status (`/api/monitoring`)**
 - `GET /api/monitoring/cache/stats` — Returns Redis cache hit rates, memory usage, and key counts.
+- `GET /api/monitoring/cost/trip/{trip_id}` — Per-trip API/LLM cost breakdown.
+- `GET /api/monitoring/cost/user/daily` — Daily cost usage for the current user.
+- `GET /api/monitoring/ratelimit/status` — Current rate-limit / quota guard status.
+- `GET /api/monitoring/system/health` — Aggregate system health and provider connectivity.
+
+### **5. Health (`/api/v1`, outside the versioned resource routes)**
+- `GET /api/v1/health/live` — Free liveness check; touches no provider. Point container/platform health checks here.
+- `GET /api/v1/health` — Calls Gemini and the configured maps provider; use for on-demand dependency verification, not polling.
 
 ---
 
