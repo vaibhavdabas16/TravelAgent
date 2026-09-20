@@ -51,8 +51,8 @@ TravelAgent/
     │   │   ├── planning/          <- StepRail, SelectionStep, TripBrief, TripPrompt, progress
     │   │   ├── trip/              <- ItineraryTimeline, DaySelector, Flight/Hotel cards, MapPanel
     │   │   └── shared/            <- Navbar, Footer, CommandPalette, LoginModal, states
-    │   ├── contexts/              <- AuthContext (JWT session management)
-    │   ├── lib/                   <- Trip model/parser, planning steps & storage, theme, format
+    │   ├── contexts/              <- AuthContext (JWT session, migrates local trips on login)
+    │   ├── lib/                   <- Trip model/parser, planning steps & storage, saved-trips, theme, format
     │   ├── routes/                <- HomePage, PlanPage, TripPage, TripsPage
     │   ├── services/              <- api.ts (REST client + SSE stream)
     │   ├── index.css              <- Tailwind v4 layers & component primitives
@@ -98,6 +98,9 @@ Redis is **optional everywhere** — if it is unreachable the app logs a warning
 - **Planning flow:** A step rail over selection steps, with progress streamed live from the backend over SSE.
 - **Itinerary view:** Day selector over a timeline, with flight, hotel, local transport and Leaflet map panels.
 - **Theming:** Tailwind v4 `@theme` driven by `tokens.css`, with a light/dark toggle.
+
+### 💾 **5. Saved Trips Follow the Account**
+"My trips" is backed by a `saved_trips` table (`/api/v2/saved-trips`), scoped to the signed-in user — a trip follows the account to another device, and another user's session id reads as missing rather than forbidden. Guests without an account still get "My trips" via a localStorage fallback; on login, any locally saved trips are uploaded to the account and the local copies are dropped.
 
 ---
 
@@ -225,6 +228,8 @@ The frontend deploys to Vercel as a static SPA; the backend needs a container ho
 2. Render dashboard → **New → Blueprint** → select the repository.
 3. Fill in the secrets marked `sync: false`. `DATABASE_*` and `REDIS_URL` are wired automatically from the managed services; `JWT_SECRET_KEY` is generated.
 4. Leave `CORS_ORIGINS` blank until the frontend URL exists.
+
+The container's start command runs `alembic upgrade head` before starting Uvicorn, so the schema is always current on deploy — Render's free plan has no separate pre-deploy hook. The upgrade is idempotent; if it fails, it logs and starts anyway (planning still works, persistence doesn't). `docker compose` runs the same step, so a fresh local volume isn't left with an empty database either.
 
 **2. Frontend (Vercel)**
 1. Import the repository, set the root directory to `frontend`.
