@@ -13,7 +13,7 @@ frontend/
 │   │   ├── HomePage.tsx             # Landing: headline, natural-language prompt, three facts
 │   │   ├── PlanPage.tsx             # Planner: the brief, then one addressable step per search
 │   │   ├── TripPage.tsx             # Itinerary: day timeline + map, Overview / Stay / Flights tabs
-│   │   └── TripsPage.tsx            # Trips saved in this browser
+│   │   └── TripsPage.tsx            # My trips: account-backed when signed in, this browser otherwise
 │   ├── components/
 │   │   ├── shared/                  # Navbar, Footer, LoginModal, Photo, Toaster, empty/error states
 │   │   ├── planning/                # TripPrompt, TripBrief, SelectionStep, PlaceRow, StepRail, PlanningProgress
@@ -23,7 +23,8 @@ frontend/
 │   │   ├── trip-model.ts            # Normalises the API payload into the view model; never invents fields
 │   │   ├── format.ts                # Money, durations, dates, photo/coord helpers (null when data is missing)
 │   │   ├── planning-steps.ts        # Step order shared by router and planner
-│   │   └── planning-storage.ts      # sessionStorage working copy + localStorage saved-trips library
+│   │   ├── planning-storage.ts      # sessionStorage working copy + localStorage fallback library
+│   │   └── saved-trips.ts           # "My trips": account-backed for signed-in users, local fallback for guests
 │   ├── services/api.ts              # Axios client: auth, planning endpoints, SSE itinerary stream
 │   ├── contexts/AuthContext.tsx     # JWT session
 │   └── index.css                    # Design tokens and the .btn / .field / .chip / .list / .row primitives
@@ -43,12 +44,12 @@ npm install
 Create a `.env` file in the `frontend/` directory (copy from `.env.example`):
 
 ```ini
-# Backend API Base URL
+# Backend API Base URL — the client appends REST paths directly to this, so
+# the /api suffix is required.
 VITE_API_URL=http://127.0.0.1:8000/api
-
-# Google Maps JavaScript API Key (for map rendering & photo URLs)
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 ```
+
+That's the only variable. The map is Leaflet over OpenStreetMap tiles, and place photos are served through the backend's photo proxy — neither needs a frontend API key.
 
 ### **3. Development Server**
 Start the Vite development server with HMR:
@@ -63,6 +64,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ### **1. Authentication (`AuthContext.tsx`)**
 - Persists JWT tokens in `localStorage` (`auth_token`), attaches them via an Axios interceptor, restores the session with `getCurrentUser()`.
+- On login, `migrateLocalTripsToAccount()` uploads any trips saved as a guest to the account (best-effort, one bad trip doesn't block sign-in) and clears the local copies, so signing in never appears to lose a saved trip.
 
 ### **2. The brief (`/plan`)**
 - The visitor types one sentence. `trip-parser.ts` extracts destination, origin, dates, travelers, budget tier (`budget | moderate | luxury`, the values the backend scores against), pace, travel styles and stay must-haves.
@@ -73,7 +75,9 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 `places → accommodations → dining → transportation → activities → shopping → wellness`. Entering a step runs its search once and caches the result in sessionStorage, so back/refresh never re-bills the providers. Leaving a step posts its selections. From the stay step onward, "Skip ahead and build my itinerary" is available. The final build streams stage progress over SSE (`api.streamItinerary`).
 
 ### **4. Itinerary (`/trip/:sessionId`)**
-`trip-model.ts` turns `{ itinerary: [{ day, title, stops, transport_legs }], recommended_hotels, recommended_flights, local_transport }` into a view model. Travel legs (mode, duration, distance) come straight from the backend; day insights ("stops are grouped within ~3 km") are derived from those legs only. Stops have no fabricated clock times, prices, weather or descriptions — a missing field hides its element. Selecting a timeline item highlights the map marker and vice versa. "Save trip" promotes the session copy to a localStorage library that backs **My trips**.
+`trip-model.ts` turns `{ itinerary: [{ day, title, stops, transport_legs }], recommended_hotels, recommended_flights, local_transport }` into a view model. Travel legs (mode, duration, distance) come straight from the backend; day insights ("stops are grouped within ~3 km") are derived from those legs only. Stops have no fabricated clock times, prices, weather or descriptions — a missing field hides its element. Selecting a timeline item highlights the map marker and vice versa.
+
+"Save trip" writes through `lib/saved-trips.ts` (`PUT /api/v2/saved-trips/{sessionId}`) for a signed-in visitor, so **My trips** follows the account to any device and stays invisible to anyone else who signs into the same browser. A signed-out visitor falls back to a localStorage library, same as before; that fallback copy is uploaded to the account automatically on the next login.
 
 ---
 

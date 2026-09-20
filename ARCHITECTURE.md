@@ -33,9 +33,10 @@ The system processes natural language or structured travel queries into an optim
         │                  │                    │                  │
         ▼                  ▼                    ▼                  ▼
 ┌──────────────┐   ┌──────────────┐   ┌─────────────────┐  ┌──────────────┐
-│Gemini Flash  │   │Google Places │   │ Google OR-Tools │  │ Amadeus API  │
-│Constraints   │   │+ Pinecone DB │   │ VRPTW Solver    │  │ + Routes API │
-└──────────────┘   └──────────────┘   └─────────────────┘  └──────────────┘
+│Gemini Flash  │   │Places provider│  │ Google OR-Tools │  │ Amadeus API  │
+│Constraints   │   │+ Pinecone DB │   │ VRPTW Solver    │  │+ Routing     │
+└──────────────┘   └──────────────┘   └─────────────────┘  │provider      │
+                                                             └──────────────┘
         │                  │                    │                  │
         └──────────────────┴───────────┬────────┴──────────────────┘
                                        │
@@ -47,6 +48,8 @@ The system processes natural language or structured travel queries into an optim
                        │  - Pinecone 768d Vectors     │
                        └──────────────────────────────┘
 ```
+
+"Places provider" and "Routing provider" are `MAPS_PROVIDER`-selected: Google Places + Google Routes, or Foursquare Places + Geoapify — see [System Capabilities → Provider Abstraction](README.md#-system-capabilities) in the main README.
 
 ---
 
@@ -91,10 +94,10 @@ The agent graph is defined in `backend/app/agents/graph.py`. State transitions a
 | Node Name | File Location | Responsible Logic | Output Artifacts |
 | :--- | :--- | :--- | :--- |
 | **`intake`** | `app/agents/intake.py` | Extracts trip destination, dates, budget, vibe, travelers, amenities, and must-see list. Geocodes destination. | `constraints`, `destination_coords` |
-| **`discovery`** | `app/agents/discovery.py` | Hybrid POI search via Google Places & Pinecone vector similarity. Applies LLM quality filtering (`filter_irrelevant_pois`) and must-see score boosting. | `potential_pois` (Top 30 ranked POIs) |
+| **`discovery`** | `app/agents/discovery.py` | Hybrid POI search via the configured places provider (Google Places or Foursquare) & Pinecone vector similarity. Applies LLM quality filtering (`filter_irrelevant_pois`) and must-see score boosting. | `potential_pois` (Top 30 ranked POIs) |
 | **`optimizer`** | `app/agents/optimizer.py` | Solves Vehicle Routing Problem with Time Windows (VRPTW) using Google OR-Tools. | `itinerary` (Day-by-day structured stops) |
 | **`accommodation`**| `app/agents/accommodation.py` | Searches hotel offers via Amadeus API / SerpAPI. Scores hotels by proximity to itinerary POIs. | `recommended_hotels`, `selected_accommodation` |
-| **`transport`** | `app/agents/transport.py` | Searches flight offers (Amadeus) and calculates local Transit/Driving/Walking matrices (Google Routes). | `recommended_flights`, `local_transport` |
+| **`transport`** | `app/agents/transport.py` | Searches flight offers (Amadeus) and calculates local Transit/Driving/Walking matrices via the configured routing provider (Google Routes or Geoapify). | `recommended_flights`, `local_transport` |
 
 ---
 
@@ -108,7 +111,7 @@ The itinerary optimizer (`backend/app/services/optimizer.py` & `app/agents/optim
 - **Time Dimension ($T_i$)**: Arrival time at POI $i$.
 - **Constraints:**
   1. **Time Window**: $e_i \le T_i \le l_i$, where $e_i$ is opening time and $l_i$ is closing time.
-  2. **Service Time**: $T_j \ge T_i + \text{duration}_i + t_{ij}$ where $t_{ij}$ is travel duration from Google Routes API.
+  2. **Service Time**: $T_j \ge T_i + \text{duration}_i + t_{ij}$ where $t_{ij}$ is travel duration from the configured routing provider (Google Routes or Geoapify).
   3. **Day Bounds**: Day start hour (default `09:00`) to day end hour (default `22:00`).
   4. **Pace Limit**: Maximum POIs per day based on user preference (Laid-back: 2-3 POIs/day, Balanced: 4-5 POIs/day, Adventurous: 6+ POIs/day).
 
@@ -134,21 +137,35 @@ The application uses **PostgreSQL** via async **SQLAlchemy** (`backend/app/db/mo
  │ email (VARCHAR)      │        ││ user_id (UUID) [FK]  │
  │ hashed_password      │        ││ destination (VARCHAR)│
  │ full_name (VARCHAR)  │        ││ status (VARCHAR)     │
- │ created_at (TIMESTAMP)        ││ constraints (JSONB)  │
- └──────────────────────┘        ││ itinerary (JSONB)    │
-                                 ││ created_at           │
-                                 └──────────────────────┘
-                                            │
-                                            ▼
-                                 ┌──────────────────────┐
-                                 │         pois         │
-                                 ├──────────────────────┤
-                                 │ place_id (STR) [PK]  │
-                                 │ name (VARCHAR)       │
-                                 │ rating (FLOAT)       │
-                                 │ location (GEOMETRY)  │
-                                 │ metadata (JSONB)     │
-                                 └──────────────────────┘
+ │ created_at (TIMESTAMP)│       ││ constraints (JSONB)  │
+ └──────────┬───────────┘        ││ itinerary (JSONB)    │
+            │                    ││ created_at           │
+            │                    └┴──────────────────────┘
+            │                               │
+            │                               ▼
+            │                    ┌──────────────────────┐
+            │                    │         pois         │
+            │                    ├──────────────────────┤
+            │                    │ place_id (STR) [PK]  │
+            │                    │ name (VARCHAR)       │
+            │                    │ rating (FLOAT)       │
+            │                    │ location (GEOMETRY)  │
+            │                    │ metadata (JSONB)     │
+            │                    └──────────────────────┘
+            │
+            ▼
+ ┌────────────────────────────┐
+ │        saved_trips         │   "My trips" — a finished itinerary the user
+ ├────────────────────────────┤   pressed Save on, keyed by planner session_id
+ │ id (UUID) [PK]             │   rather than a trips.id. Scoped to user_id:
+ │ user_id (UUID) [FK]        │   another user's session_id reads as missing,
+ │ session_id (VARCHAR)       │   not forbidden. Distinct from `trips`, which
+ │ destination (VARCHAR)      │   tracks in-flight LangGraph runs.
+ │ dates (VARCHAR)            │
+ │ days (INTEGER)             │
+ │ trip (JSONB)               │
+ │ saved_at (TIMESTAMP)       │
+ └────────────────────────────┘
 ```
 
 ---
@@ -173,7 +190,7 @@ The `CostTracker` service (`backend/app/services/cost_tracker.py`) logs API usag
 
 | Provider | Purpose | Rate Limit / Quota Guard |
 | :--- | :--- | :--- |
-| **Google Places & Routes** | POI details, geocoding, multi-modal routes | Cached in Redis; batch text search |
+| **Places/routing provider** (Google Places + Routes, or Foursquare + Geoapify — set by `MAPS_PROVIDER`) | POI details, geocoding, multi-modal routes | Cached in Redis; batch text search |
 | **Google Gemini Flash 2.5** | Intent parsing, POI relevance filtering | Prompt hashing cache; fallback to basic regex |
 | **Amadeus Flight & Hotel API**| Live hotel pricing & flight offers | OAuth2 token caching (20 min expiry) |
 | **SerpAPI** | Alternative hotel price intelligence | On-demand search for top 5 candidates |
@@ -186,3 +203,5 @@ The `CostTracker` service (`backend/app/services/cost_tracker.py`) logs API usag
 - **Auth Strategy:** OAuth2 Bearer Tokens (JWT) with HS256 algorithm.
 - **Password Hashing:** Passlib with bcrypt scheme.
 - **Interceptors:** Frontend Axios interceptor (`frontend/src/services/api.ts`) automatically attaches `Authorization: Bearer <token>` to protected endpoints and handles HTTP 401/403/422 responses with Sonner toast UI alerts.
+- **Resource scoping:** `saved_trips` rows are always filtered by the authenticated `user_id`; a request for another user's `session_id` returns 404, never 403, so existence isn't leaked either.
+- **Provider key isolation:** `GET /api/v2/planning/photos/{reference}` used to 307-redirect to the Google Places photo URL, which carries `key=<GOOGLE_MAPS_API_KEY>` in the `Location` header — exposing an unrestricted server key to any caller of a public route. It now fetches the image server-side and returns the bytes; only Foursquare references (which decode to a plain, credential-free CDN URL) still redirect.
