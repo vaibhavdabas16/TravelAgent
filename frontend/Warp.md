@@ -1,40 +1,38 @@
-
 # Warp Product Manual
 
 ## Project Overview
 
-This project is a modern, AI-powered trip planner that allows users to create personalized travel itineraries based on their preferences. Built with a sophisticated tech stack, the application provides a seamless, intuitive, and visually appealing experience for planning and viewing trip details.
+An AI-powered trip planner. The user describes a trip in one sentence, picks places, a hotel, transport and other options step by step, and gets a day-by-day itinerary with a map that can be saved to "My trips".
+
+For setup, the folder structure and the design system, see [README.md](README.md). For the backend and the overall architecture, see the [main README](../README.md#-how-it-works--architecture-at-a-glance).
 
 ### Key Features
 
-- **AI-Driven Planning Flow**: A multi-step process that guides users through planning their trip, including defining the destination, dates, group size, and travel style.
-- **Dynamic Itinerary Generation**: Based on user input, the application generates a detailed, day-by-day itinerary with curated recommendations for activities, dining, and accommodations.
-- **Interactive Trip Plan**: The generated trip plan is displayed in a well-structured and engaging format, featuring maps, images, and budget information.
-- **Component-Based Architecture**: The application is built with a modular, reusable component-based architecture, ensuring maintainability and scalability.
+- **One-sentence brief**: `lib/trip-parser.ts` extracts destination, origin, dates, travelers, budget, pace, styles and must-haves; the user can edit every field before continuing.
+- **Step-by-step planner**: Each step (places, accommodations, dining, transportation, activities, shopping, wellness) runs one backend search and lets the user pick results. From the stay step onward, "Build itinerary now" builds with what is selected so far; the steps from dining on can be skipped.
+- **Streaming itinerary build**: The final build streams stage progress from the backend over Server-Sent Events.
+- **Itinerary view**: Day selector, timeline and Leaflet map, with Overview, Stay and Flights tabs.
+- **My trips**: Saved to the account when signed in, to `localStorage` when signed out; guest trips are uploaded on login.
 
 ## Technical Deep-Dive
 
 ### Core Components and Files
 
-- **`main.tsx`**: The entry point of the application, responsible for rendering the main `App` component.
-- **`App.tsx`**: The central component that manages the application's view state (e.g., home, planning, trip plan) and handles the data flow between different sections.
-- **`package.json`**: Defines the project's dependencies and scripts. Key dependencies include **React**, **TypeScript**, **Vite**, **Radix UI**, **Tailwind CSS**, and **Framer Motion**.
-- **`vite.config.ts`**: The Vite configuration file, which defines the build settings, server options, and aliases for streamlined development.
-- **`src/components/`**: This directory contains all the React components that make up the application's UI.
-  - **`planning-flow.tsx`**: Manages the multi-step trip planning process, guiding users through each stage of creating their itinerary.
-  - **`trip-plan.tsx`**: Displays the final generated trip plan in a detailed, interactive, and visually rich format.
-  - **`hero-section.tsx`**: The main landing page component, which serves as the entry point for users to start planning their trip.
-  - **`navbar.tsx`**: The navigation bar, providing consistent branding and access to key application features.
-  - **`planning-sections/*`**: A collection of specialized components for each step of the planning process, such as `places-to-visit.tsx`, `accommodations.tsx`, and `dining.tsx`.
+- **`src/main.tsx`**: React entry point.
+- **`src/App.tsx`**: Routes with React Router: `/` (HomePage), `/plan` and `/plan/:sessionId/:stepId` (PlanPage), `/trip/:sessionId` (TripPage), `/trips` (TripsPage).
+- **`src/services/api.ts`**: Axios client for auth, planning, saved trips and the SSE itinerary stream; attaches the JWT and shows toasts on 401/403/404/422.
+- **`src/contexts/AuthContext.tsx`**: JWT session and guest-trip migration on login.
+- **`src/lib/`**: Trip parser, step order (`planning-steps.ts`), session storage (`planning-storage.ts`), API-to-view-model mapping (`trip-model.ts`), saved trips, theme and formatting helpers.
+- **`src/components/`**: `landing/`, `planning/`, `trip/` and `shared/` component groups.
+- **`package.json`**: React 18, React Router 6, Vite 6, Tailwind CSS v4, Leaflet, Sonner and Lucide icons.
 
 ### Data Flow
 
-1. **Initiation**: The user begins on the **`HeroSection`**, where they can start the trip planning process.
-2. **State Transition**: The `App` component transitions its state to `planning`, which renders the **`PlanningFlow`** component.
-3. **User Input**: The user progresses through the guided steps in the **`PlanningFlow`**, making selections for their destination, travel dates, and preferences for activities, dining, and lodging.
-4. **Data Aggregation**: The **`PlanningFlow`** component collects and manages the user's selections in its state.
-5. **Completion and Data Transfer**: Upon completing the planning flow, the `onComplete` callback is triggered, passing the aggregated planning data to the `App` component.
-6. **Final Itinerary**: The `App` component updates its state to `trip-plan` and renders the **`TripPlan`** component, which receives the planning data as props.
-7. **Display**: The **`TripPlan`** component uses the received data to generate and display a comprehensive, day-by-day itinerary, complete with mock data fallbacks to ensure a robust user experience.
+1. **Brief**: On `/plan` the user types a sentence; the parsed brief is shown as editable fields.
+2. **Session**: Continue calls `POST /api/v2/planning/start`, receives a `session_id` and moves to `/plan/:sessionId/places`.
+3. **Steps**: Entering a step calls its search endpoint once and caches the results in `sessionStorage`, so going back or refreshing does not call the providers again. Leaving a step posts the selections.
+4. **Build**: `POST /api/v2/planning/:sessionId/itinerary/stream` streams `collect → cluster → transport` progress, then returns the itinerary.
+5. **Display**: `/trip/:sessionId` maps the response through `trip-model.ts`. Missing fields are hidden rather than filled with made-up data.
+6. **Save**: "Save trip" calls `PUT /api/v2/saved-trips/:sessionId` when signed in, or stores the trip in `localStorage` otherwise.
 
-This documentation provides a complete overview of the project's structure, functionality, and data flow, enabling a thorough understanding of its technical implementation.
+The backend keeps planning sessions in memory, so if it restarts during a plan, the planner shows that the session is no longer available and the user starts again.

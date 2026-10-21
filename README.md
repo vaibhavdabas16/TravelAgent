@@ -8,10 +8,10 @@ A production-grade, AI-powered multi-agent travel planning platform built with *
 
 The Intelligent Travel Agent System transforms free-form natural language prompts or structured preferences into fully optimized, multi-day travel itineraries. Unlike simple LLM wrappers, the system combines:
 
-1. **Autonomous AI Agents (LangGraph)**: Specialized nodes for intent extraction, POI discovery, local expert scoring, accommodation selection, and flight/transit routing.
-2. **Operations Research Optimization (Google OR-Tools)**: Solves the Vehicle Routing Problem with Time Windows (VRPTW) to construct realistic daily schedules that honor travel times, visit durations, and opening hours.
-3. **Swappable Data Providers**: The agent graph is written against provider interfaces, not vendors. Places and routing run on **either** Google Maps Platform **or** a zero-cost Foursquare + Geoapify stack, selected by a single environment variable — no agent code changes.
-4. **Real-Time Travel Inventory**: Live flight and hotel offers via Amadeus and searchapi.io, with Pinecone vector similarity search over discovered POIs.
+1. **AI Agents**: Specialised agents for constraint extraction, place discovery (with Gemini relevance filtering), hotel scoring, flights and local transport, and itinerary building. The one-shot API chains them with **LangGraph**.
+2. **Operations Research Optimization (Google OR-Tools)**: The one-shot planner solves a Vehicle Routing Problem with Time Windows (VRPTW) to build daily schedules that honour travel times, visit durations and opening hours. The web app's step-by-step planner uses Gemini to group the user's picks into days instead.
+3. **Swappable Data Providers**: Agents are written against provider interfaces, not vendors. Places, hotels and routing run on **either** Google Maps Platform **or** a zero-cost Foursquare + Geoapify stack, selected by a single environment variable — no agent code changes.
+4. **Live Travel Data**: Hotels come from the places provider and flights from Google Flights results via searchapi.io. A Pinecone index backs a separate semantic POI search endpoint.
 5. **Streaming Multi-Step UI**: A React 18 frontend that streams planning progress over SSE, with an interactive Leaflet map and day-by-day itinerary.
 
 ---
@@ -46,12 +46,12 @@ flowchart TB
     subgraph EXT["⑤ External APIs"]
         GEM["Google Gemini<br/>LLM + embeddings"]
         MAPS["Places & routes<br/>Google or Foursquare + Geoapify"]
-        INV["Hotels & flights<br/>Amadeus · searchapi.io · SerpAPI"]
+        INV["Flights & web search<br/>searchapi.io"]
     end
 
     subgraph DATA["⑥ Data stores"]
         PG[("PostgreSQL<br/>users · trips · saved_trips")]
-        RD[("Redis — optional<br/>cache · rate limits · costs")]
+        RD[("Redis — optional<br/>geocode + route cache · API cost counters")]
         PC[("Pinecone<br/>POI vectors")]
     end
 
@@ -66,7 +66,7 @@ flowchart TB
     AGENTS --> GEM & INV
     ACC --> PG
     ONE --> PG
-    ONE -.-> PC
+    ROUTES -.->|"semantic search"| PC
     AGENTS -.->|cache| RD
 ```
 
@@ -81,7 +81,7 @@ sequenceDiagram
     participant App as React app
     participant API as FastAPI backend
     participant Agents as Agents
-    participant Ext as Gemini · Maps · Amadeus · searchapi
+    participant Ext as Gemini · Maps · searchapi.io
     participant DB as PostgreSQL
 
     User->>App: Fill trip brief (destination, dates, budget, interests, pace)
@@ -96,13 +96,13 @@ sequenceDiagram
 
     App->>API: POST /accommodations/search
     API->>Agents: accommodation agent (score by location + price)
-    Agents->>Ext: Amadeus / SerpAPI / Places
+    Agents->>Ext: hotel search via places provider, travel time to your picks
     API-->>App: ranked hotels
     User->>App: Pick hotel → POST /accommodations/select
 
     App->>API: POST /transport/search, then dining · activities · shopping · wellness /search
     API->>Agents: transport agent, query generator + discovery per category
-    Agents->>Ext: flights, routes, category searches
+    Agents->>Ext: flights (searchapi.io), routes, category searches
     User->>App: Pick options → POST /…/select for each
 
     App->>API: POST /itinerary/stream
@@ -157,12 +157,12 @@ If the optimizer cannot find a feasible schedule, the graph still continues to a
 | :--- | :--- | :--- | :--- |
 | Active planning session (step-by-step planner) | Backend memory (`planning_sessions`) | Until the server restarts | Lost on restart or redeploy; not shared between server instances |
 | User accounts | PostgreSQL `users` | Permanent | Passwords hashed with bcrypt |
-| One-shot trips | PostgreSQL `trips` | Permanent | Constraints and itinerary as JSONB |
+| One-shot trips | PostgreSQL `trips`, `pois`, `trip_pois`, `itinerary_items` | Permanent | Also kept in server memory for quick reads |
 | Saved trips ("My trips") | PostgreSQL `saved_trips` | Until the user deletes | Always filtered by the signed-in user |
 | Guest trips | Browser `localStorage` | Until cleared | Uploaded to the account on login |
-| API and LLM responses | Redis `travel:*` keys | 5 min to 30 days | See [Caching](#-3-caching--cost-tracking); optional |
-| Rate-limit and cost counters | Redis | Rolling windows | Disabled when Redis is down |
-| POI embeddings | Pinecone | Permanent | Used by `/api/v2/pois/semantic-search` |
+| Geocoding and route results | Redis `travel:geocode:*`, `travel:route:*` | 7 days / 5 min | See [Caching](#-3-caching--cost-tracking); optional |
+| API cost counters | Redis | 30 days | Not recorded when Redis is down |
+| POI embeddings | Pinecone | Permanent | Read by `/api/v2/pois/semantic-search`; no planner step writes to it yet, so the index can be empty |
 
 ### 5. How the provider switch works
 
@@ -179,11 +179,11 @@ flowchart LR
 
 | If this is down | What the user sees | Why |
 | :--- | :--- | :--- |
-| Redis | Everything works, just slower and without rate limits | Checked once at startup; cache calls return "miss" |
+| Redis | Everything works, with more provider calls and no cost counters | Checked once at startup; cache calls return "miss" |
 | PostgreSQL | Planning still works; login and saving trips fail | Planning sessions live in memory |
 | Gemini | Discovery filtering and itinerary building fail or fall back | Gemini is the core LLM |
 | Maps provider | No places or routes | Switch `MAPS_PROVIDER` to the other stack |
-| Amadeus / searchapi | Fewer or no hotel and flight options | Other steps continue |
+| searchapi.io | No flight options, less transport detail | Other steps continue |
 | Backend restarted mid-plan | "Session not found"; the planner must start again | Sessions are in memory |
 
 Quick checks: `GET /api/v1/health/live` (is the server up), `GET /api/monitoring/cache/stats` (is Redis answering right now), `GET /api/v1/health` (do Gemini and the maps provider respond — uses quota).
@@ -243,29 +243,30 @@ For complete technical specifications, state graph definitions, and database sch
 ## ✨ System Capabilities
 
 ### 🤖 **1. Autonomous Multi-Agent Graph (LangGraph)**
-- **Intake Node:** Extracts constraints (destination, dates, travelers, budget, vibe, must-see preferences) from natural language or structured forms.
-- **Discovery Node:** Hybrid search across the configured places provider and the Pinecone vector index (768-dim Gemini embeddings), filtered by an LLM validation step (`filter_irrelevant_pois`).
-- **Optimizer Node:** Converts candidate POIs into a VRPTW model solved by Google OR-Tools, incorporating distance matrices, opening hours, and adaptive time window relaxation.
-- **Accommodation Node:** Searches live hotel offers via Amadeus, scoring on proximity to selected POIs, budget fit, and ratings.
-- **Transport Node:** Fetches live flight offers (Amadeus, searchapi.io) and multi-modal local transport routes between day stops.
+- **Intake Node:** Gemini extracts constraints (destination, dates, travelers, budget, vibe, must-see preferences) from natural language or structured forms, then the destination is geocoded.
+- **Discovery Node:** Searches the configured places provider, removes irrelevant results with a Gemini check (`filter_irrelevant_pois`), boosts must-see matches and keeps the top 30.
+- **Optimizer Node:** Builds a VRPTW model from up to 8 candidate POIs and solves it with Google OR-Tools (09:00–22:00 days, 30 s limit). If no schedule fits, it retries up to 3 times with relaxed settings: longer days, fewer POIs, or transit instead of driving.
+- **Accommodation Node:** Searches hotels through the places provider and scores them on travel time to the chosen POIs, budget fit and rating, with a Gemini summary.
+- **Transport Node:** Fetches flight options from Google Flights results via searchapi.io, and local routes between stops from the routing provider.
+- **Not yet wired in:** Amadeus hotel and flight providers and a SerpAPI price-comparison service are implemented under `app/services/`, but no planner step calls them.
 
 ### 🔄 **2. Provider Abstraction**
 `MAPS_PROVIDER` selects the places and routing backend at startup:
 
 | Value | Places | Geocoding & routing | Cost |
 | :--- | :--- | :--- | :--- |
-| `google` *(default)* | Google Places | Google Routes | Billing account required |
-| `foursquare` | Foursquare Places | Geoapify | Free tier, no card |
+| `google` *(default)* | Google Places (places and hotels) | Google Routes | Billing account required |
+| `foursquare` | Foursquare Places (places and hotels) | Geoapify | Free tier, no card |
 
 Both implementations satisfy the same interface and return the same shapes, so the agent graph, tools and API responses are identical either way.
 
 ### ⚡ **3. Caching & Cost Tracking**
-- **Layer 1 (API Cache):** Redis caching for place details (24h), geocoding (7 days), and routes (5 min).
-- **Layer 2 (Session Cache):** Trip state persistence in Redis.
-- **Layer 3 (LLM Cache):** Deterministic LLM response caching (30 days).
-- **Cost Tracker:** Monitors Gemini and external API spend against quota limits.
+- **In use:** Redis caches geocoding results (7 days) and routes (5 min) for both provider stacks.
+- **Available but not called yet:** helpers for place details (24 h), LLM responses (30 days) and session state exist in `CacheService`.
+- **Cost Tracker:** Counts maps-provider calls and their estimated cost per user and per trip in Redis; see `/api/monitoring/cost/*`.
+- **Rate limiter:** Implemented and reported by `/api/monitoring/ratelimit/status`, but not yet enforced on any route.
 
-Redis is **optional everywhere** — if it is unreachable the app logs a warning and runs uncached.
+Redis is **optional everywhere** — if it is unreachable at startup the app logs a warning and runs uncached. The connection is checked only at startup, so `/api/monitoring/cache/stats` is the reliable live check.
 
 ### 🎨 **4. React 18 Web App**
 - **Landing page:** Hand-built SVG system map and apparatus diagrams showing the actual planning pipeline.
@@ -330,14 +331,14 @@ GEMINI_API_KEY=your_gemini_api_key          # aistudio.google.com/apikey
 PINECONE_API_KEY=your_pinecone_api_key      # index is created automatically
 
 # --- Travel inventory ---
-AMADEUS_API_KEY=your_amadeus_api_key
-AMADEUS_API_SECRET=your_amadeus_api_secret
-SEARCH_API_KEY=your_searchapi_io_key        # flights
-SERPAPI_API_KEY=your_serpapi_key            # price intelligence
+SEARCH_API_KEY=your_searchapi_io_key        # flights + web search (used)
+AMADEUS_API_KEY=your_amadeus_api_key        # optional: providers not wired in yet
+AMADEUS_API_SECRET=your_amadeus_api_secret  # optional
+SERPAPI_API_KEY=your_serpapi_key            # optional: price comparison, not wired in yet
 
 # --- Database ---
 DATABASE_HOST=localhost
-DATABASE_PORT=5432
+DATABASE_PORT=5432               # the code default is 5433, so set this explicitly
 DATABASE_NAME=travel_agent
 DATABASE_USER=postgres
 DATABASE_PASSWORD=postgres
@@ -350,7 +351,7 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 
 # --- Security ---
-JWT_SECRET_KEY=generate_a_long_random_value
+JWT_SECRET_KEY=generate_a_long_random_value  # falls back to a public placeholder if unset
 ```
 
 #### **Frontend `.env` (`frontend/.env`)**
@@ -432,6 +433,8 @@ Point automated checks at `/health/live`. Polling `/health` on an interval will 
 
 ## 🧪 Testing Strategy
 
+Most tests call the real providers, so they need valid keys in `backend/.env` and use API quota. `test_caching.py` and `test_end_to_end.py` also expect the backend to be running on `http://localhost:8000`.
+
 Run the complete backend test suite:
 ```bash
 cd backend
@@ -446,8 +449,8 @@ pytest tests/test_phase2_end_to_end.py -v
 # OR-Tools optimizer test
 pytest tests/test_optimizer.py -v
 
-# Amadeus Provider test
-pytest tests/test_amadeus_flights.py -v
+# Routing provider test
+pytest tests/test_google_routes.py -v
 ```
 
 ---

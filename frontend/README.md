@@ -15,19 +15,25 @@ frontend/
 │   │   ├── TripPage.tsx             # Itinerary: day timeline + map, Overview / Stay / Flights tabs
 │   │   └── TripsPage.tsx            # My trips: account-backed when signed in, this browser otherwise
 │   ├── components/
-│   │   ├── shared/                  # Navbar, Footer, LoginModal, Photo, Toaster, empty/error states
+│   │   ├── landing/                 # Apparatus, MeterStrip, SystemMap (hand-built SVG of the pipeline)
+│   │   ├── shared/                  # Navbar, Footer, CommandPalette, LoginModal, Photo, Toaster, Agent (notes), States
 │   │   ├── planning/                # TripPrompt, TripBrief, SelectionStep, PlaceRow, StepRail, PlanningProgress
-│   │   └── trip/                    # DaySelector, ItineraryTimeline, MapPanel, HotelRow, FlightRow, LocalTransportPanel
+│   │   └── trip/                    # DaySelector, ItineraryTimeline, MapPanel, HotelCard, FlightCard, LocalTransportPanel
 │   ├── lib/
 │   │   ├── trip-parser.ts           # Free text → destination, dates, travelers, budget, styles (client-side)
 │   │   ├── trip-model.ts            # Normalises the API payload into the view model; never invents fields
 │   │   ├── format.ts                # Money, durations, dates, photo/coord helpers (null when data is missing)
 │   │   ├── planning-steps.ts        # Step order shared by router and planner
 │   │   ├── planning-storage.ts      # sessionStorage working copy + localStorage fallback library
-│   │   └── saved-trips.ts           # "My trips": account-backed for signed-in users, local fallback for guests
+│   │   ├── saved-trips.ts           # "My trips": account-backed for signed-in users, local fallback for guests
+│   │   └── theme.ts                 # Light/dark theme toggle, persisted in localStorage
 │   ├── services/api.ts              # Axios client: auth, planning endpoints, SSE itinerary stream
-│   ├── contexts/AuthContext.tsx     # JWT session
-│   └── index.css                    # Design tokens and the .btn / .field / .chip / .list / .row primitives
+│   ├── contexts/AuthContext.tsx     # JWT session; migrates guest trips on login
+│   ├── App.tsx / main.tsx           # Router and React entrypoint
+│   └── index.css                    # Tailwind v4 layers and the .btn / .field / .chip / .list / .row primitives
+├── tokens.css                       # Design tokens mapped onto Tailwind @theme
+├── Dockerfile + nginx.conf          # Production image: static build served by nginx (port 3000 in docker compose)
+└── vercel.json                      # Vercel SPA rewrites and asset caching
 ```
 
 ---
@@ -72,10 +78,10 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 - Continue calls `api.startPlanning()` and redirects to `/plan/:sessionId/places`.
 
 ### **3. Selection steps (`/plan/:sessionId/:stepId`)**
-`places → accommodations → dining → transportation → activities → shopping → wellness`. Entering a step runs its search once and caches the result in sessionStorage, so back/refresh never re-bills the providers. Leaving a step posts its selections. From the stay step onward, "Skip ahead and build my itinerary" is available. The final build streams stage progress over SSE (`api.streamItinerary`).
+`places → accommodations → dining → transportation → activities → shopping → wellness` (after the `brief`). Each step calls the matching `/api/v2/planning/{sessionId}/…/search` endpoint; the transportation step calls `/transport/search`. Entering a step runs its search once and caches the result in sessionStorage, so back/refresh never re-bills the providers. Leaving a step posts its selections. From the stay step onward, "Build itinerary now" builds with what is selected so far, and the steps from dining on are optional ("Skip"). The final build streams stage progress (`collect → cluster → transport`) over SSE (`api.streamItinerary`). The backend keeps planning sessions in memory, so if it restarts mid-plan the planner reports that the session is gone and the user starts again.
 
 ### **4. Itinerary (`/trip/:sessionId`)**
-`trip-model.ts` turns `{ itinerary: [{ day, title, stops, transport_legs }], recommended_hotels, recommended_flights, local_transport }` into a view model. Travel legs (mode, duration, distance) come straight from the backend; day insights ("stops are grouped within ~3 km") are derived from those legs only. Stops have no fabricated clock times, prices, weather or descriptions — a missing field hides its element. Selecting a timeline item highlights the map marker and vice versa.
+`TripPage` has four tabs: Itinerary, Overview, Stay and Flights. `trip-model.ts` turns `{ itinerary: [{ day, title, stops, transport_legs }], recommended_hotels, recommended_flights, local_transport }` into a view model. Travel legs (mode, duration, distance) come straight from the backend; day insights ("stops are grouped within ~3 km") are derived from those legs only. Stops have no fabricated clock times, prices, weather or descriptions — a missing field hides its element. Selecting a timeline item highlights the map marker and vice versa.
 
 "Save trip" writes through `lib/saved-trips.ts` (`PUT /api/v2/saved-trips/{sessionId}`) for a signed-in visitor, so **My trips** follows the account to any device and stays invisible to anyone else who signs into the same browser. A signed-out visitor falls back to a localStorage library, same as before; that fallback copy is uploaded to the account automatically on the next login.
 
@@ -91,8 +97,6 @@ Built with the [Hallmark](https://skills.sh/nutlope/hallmark) design skill — g
 - **Nav** N5 floating pill (fixed on the landing page, in-flow above a sticky context bar on product pages); the ⌘K / Ctrl K palette (`components/shared/CommandPalette.tsx`) remains the fast path.
 - **Motion** three primitives — apparatus pulse + edge walk · reveal (section heads, verb underline) · card lift — all behind `prefers-reduced-motion`. The map's tiles are inverted into the palette with a CSS filter.
 
-Project memory for the skill is in `.hallmark/` (`preflight.json`, `log.json`); the next `hallmark` run rotates away from this structure, nav and footer.
-
 ---
 
 ## 🚀 Building for Production
@@ -101,7 +105,7 @@ To create an optimized production bundle:
 ```bash
 npm run build
 ```
-Preview the production build locally:
+Preview the production build locally (there is no `preview` script, so call Vite directly):
 ```bash
-npm run preview
+npx vite preview
 ```
