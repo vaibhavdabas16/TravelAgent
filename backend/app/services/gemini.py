@@ -34,7 +34,7 @@ class GeminiService:
         """Configure the Gemini client with the current API key."""
         current_key = self.api_keys[self.current_key_index]
         genai.configure(api_key=current_key)
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.model = genai.GenerativeModel(settings.gemini_model)
         # logger.info(f"Switched to Gemini API key index: {self.current_key_index}")
 
     def _rotate_key(self):

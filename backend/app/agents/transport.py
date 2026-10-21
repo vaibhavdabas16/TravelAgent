@@ -43,7 +43,7 @@ class TransportAgent:
         self.search_service = get_search_api_service()
         self.route_provider = get_google_routes_provider()
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model=settings.gemini_model,
             google_api_key=settings.gemini_api_key,
             temperature=0.7
         )

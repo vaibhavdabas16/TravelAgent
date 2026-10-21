@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     gemini_api_key_1: Optional[str] = None
     gemini_api_key_2: Optional[str] = None
     gemini_api_key_3: Optional[str] = None
+    # Google retires model names for new keys; gemini-2.5-flash is already
+    # refused to keys created after its cutoff. Override with GEMINI_MODEL.
+    gemini_model: str = "gemini-3.5-flash"
 
     @property
     def gemini_api_keys(self) -> list[str]:

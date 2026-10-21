@@ -42,7 +42,7 @@ class AccommodationAgent:
         self.hotel_provider = GooglePlacesHotelProvider()
         self.route_provider = get_google_routes_provider()
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model=settings.gemini_model,
             google_api_key=settings.gemini_api_key,
             temperature=0.7
         )

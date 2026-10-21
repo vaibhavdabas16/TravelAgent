@@ -333,7 +333,7 @@ async def filter_irrelevant_pois(pois: list[dict], destination: str) -> list[dic
     import json
     
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model=settings.gemini_model,
         google_api_key=settings.gemini_api_key,
         temperature=0.0,
         response_mime_type="application/json"
