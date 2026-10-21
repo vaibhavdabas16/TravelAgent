@@ -38,6 +38,10 @@ GEOAPIFY_BASE = "https://api.geoapify.com/v1"
 
 SEARCH_FIELDS = "categories,rating,stats,price,location,distance,website,tel,hours"
 DETAIL_FIELDS = SEARCH_FIELDS + ",photos,tips,description"
+# Rating, stats, price, hours, photos, tips and description are Premium
+# fields: an account with no credits gets a 429 for any request naming one.
+# These are the fields it can still read.
+FREE_FIELDS = "categories,location,distance,website,tel"
 
 # Foursquare category names -> the Google "types" the rest of the code keys on.
 _CATEGORY_TYPES: list[tuple[str, str]] = [
@@ -147,6 +151,9 @@ class FoursquarePlacesService:
         key = settings.foursquare_api_key
         # Legacy v3 keys start with "fsq3"; service keys use the 2025 API.
         self._legacy = key.startswith("fsq3")
+        # Cleared on the first 429 so later calls skip Premium fields and the
+        # wasted round trip. A restart tries Premium again, e.g. after topping up.
+        self._premium = True
         self._base = FSQ_V3_BASE if self._legacy else FSQ_NEW_BASE
         headers = {"Accept": "application/json"}
         if self._legacy:
@@ -192,10 +199,19 @@ class FoursquarePlacesService:
     def _id_fields(self) -> str:
         return "fsq_id,name,geocodes," if self._legacy else "fsq_place_id,name,latitude,longitude,"
 
+    def _get_fsq(self, path: str, params: dict, premium_fields: str) -> httpx.Response:
+        """GET with Premium fields, dropping to the free ones once credits run out."""
+        if self._premium:
+            resp = self._fsq.get(path, params={**params, "fields": self._id_fields() + premium_fields})
+            if resp.status_code != 429:
+                return resp
+            logger.warning(f"Foursquare refused Premium fields ({resp.text[:120]}); using free fields only")
+            self._premium = False
+        return self._fsq.get(path, params={**params, "fields": self._id_fields() + FREE_FIELDS})
+
     def _search(self, params: dict) -> list:
-        params = {**params, "fields": self._id_fields() + SEARCH_FIELDS}
         try:
-            resp = self._fsq.get("/places/search", params=params)
+            resp = self._get_fsq("/places/search", params, SEARCH_FIELDS)
             if resp.status_code != 200:
                 logger.error(f"Foursquare search failed {resp.status_code}: {resp.text[:200]}")
                 return []
@@ -235,13 +251,13 @@ class FoursquarePlacesService:
 
     def place_details(self, place_id: str, fields: Optional[list] = None) -> Optional[dict]:
         try:
-            resp = self._fsq.get(f"/places/{place_id}", params={"fields": self._id_fields() + DETAIL_FIELDS})
+            resp = self._get_fsq(f"/places/{place_id}", {}, DETAIL_FIELDS)
             if resp.status_code != 200:
                 logger.warning(f"Foursquare details failed {resp.status_code} for {place_id}")
                 return None
             data = resp.json()
             place = self._to_place(data)
-            if not place.get("photos"):
+            if not place.get("photos") and self._premium:
                 place["photos"] = self._photos(place_id)
             return place
         except Exception as e:
