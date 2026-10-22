@@ -2,7 +2,7 @@
 
 FastAPI backend service powering the multi-agent travel engine built with **LangGraph**, **Google OR-Tools**, **Google Gemini**, **PostgreSQL**, **Redis** (optional), **Google Maps Platform** (or the free Foursquare + Geoapify alternative), **searchapi.io** and **Pinecone**.
 
-For how the pieces fit together, see [How It Works](../README.md#-how-it-works--architecture-at-a-glance) and [ARCHITECTURE.md](../ARCHITECTURE.md).
+For how the pieces fit together, see [How It Works](../docs/HOW_IT_WORKS.md) and [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ---
 

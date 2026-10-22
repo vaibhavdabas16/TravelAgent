@@ -4,7 +4,7 @@
 
 An AI-powered trip planner. The user describes a trip in one sentence, picks places, a hotel, transport and other options step by step, and gets a day-by-day itinerary with a map that can be saved to "My trips".
 
-For setup, the folder structure and the design system, see [README.md](README.md). For the backend and the overall architecture, see the [main README](../README.md#-how-it-works--architecture-at-a-glance).
+For setup, the folder structure and the design system, see [README.md](README.md). For the backend and the overall architecture, see [How It Works](../docs/HOW_IT_WORKS.md).
 
 ### Key Features
 

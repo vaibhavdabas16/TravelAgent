@@ -1,6 +1,6 @@
 # 🏛️ Deep Technical Architecture & Multi-Agent Specifications
 
-This document covers the agent pipeline, the optimizer, the database schema, caching and provider integrations of the **Intelligent Travel Agent System**. For the big-picture diagrams and the request journey of the web app, start with [How It Works](README.md#-how-it-works--architecture-at-a-glance) in the main README.
+This document covers the agent pipeline, the optimizer, the database schema, caching and provider integrations of the **Intelligent Travel Agent System**. For the big-picture diagrams and the request journey of the web app, start with [How It Works](docs/HOW_IT_WORKS.md).
 
 ---
 
@@ -194,7 +194,7 @@ The same Redis also holds the cost tracker's per-user and per-trip counters (kep
 | :--- | :--- | :--- | :--- |
 | **Places provider** (Google Places, or Foursquare Places when `MAPS_PROVIDER=foursquare`) | Geocoding, place search, hotels | Intake, discovery, accommodation | Geocoding cached; calls counted by the cost tracker |
 | **Routing provider** (Google Routes, or Geoapify) | Travel times and routes | Optimizer, accommodation, transport | Routes cached for 5 minutes |
-| **Google Gemini** (`gemini-2.5-flash`) | Constraint extraction, place filtering, hotel summaries, itinerary grouping, search queries | Most agents | Structured output parsed from fenced or bare JSON |
+| **Google Gemini** (`GEMINI_MODEL`, default `gemini-3.5-flash`) | Constraint extraction, place filtering, hotel summaries, itinerary grouping, search queries | Most agents | Structured output parsed from fenced or bare JSON |
 | **Gemini embeddings** (`gemini-embedding-001`, 768 dims) | POI vectors | `/api/v2/pois/semantic-search` | Pinecone index is created at startup; no planner step writes to it yet |
 | **searchapi.io** | Google Flights results, web search | Transport agent, itinerary agent | Up to 5 keys rotated under quota (`SEARCH_API_KEY`, `SEARCH_API_KEY1`..`4`) |
 | **Amadeus** (hotels, flights) | Live offers | **Not wired in**: used only by `price_comparison.py` and tests | OAuth2 token valid about 30 minutes |
